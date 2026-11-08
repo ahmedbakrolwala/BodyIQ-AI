@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -24,7 +24,6 @@ import {
 import { palette as p, goalLabels } from "@/constants/design";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
-import { signIn } from "@/lib/sign-in";
 
 type Goal = keyof typeof goalLabels;
 export default function ProfileScreen() {
@@ -41,21 +40,20 @@ export default function ProfileScreen() {
       setError("");
     },
   });
-  const [name, setName] = useState("");
-  const [goal, setGoal] = useState<Goal>("get_fitter");
-  const [country, setCountry] = useState("IN");
-  const [units, setUnits] = useState<"metric" | "imperial">("metric");
+  const [draftName, setName] = useState<string | null>(null);
+  const [draftGoal, setGoal] = useState<Goal | null>(null);
+  const [draftCountry, setCountry] = useState<string | null>(null);
+  const [draftUnits, setUnits] = useState<"metric" | "imperial" | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [loginBusy, setLoginBusy] = useState(false);
-  useEffect(() => {
-    if (profile.data) {
-      setName(profile.data.displayName);
-      setGoal(profile.data.goal);
-      setCountry(profile.data.country);
-      setUnits(profile.data.units);
-    } else if (auth.user?.name) setName(auth.user.name.slice(0, 60));
-  }, [profile.data, auth.user?.name]);
+  const name =
+    draftName ??
+    profile.data?.displayName ??
+    auth.user?.name?.slice(0, 60) ??
+    "";
+  const goal = draftGoal ?? profile.data?.goal ?? "get_fitter";
+  const country = draftCountry ?? profile.data?.country ?? "IN";
+  const units = draftUnits ?? profile.data?.units ?? "metric";
   async function submit() {
     setMessage("");
     setError("");
@@ -80,25 +78,13 @@ export default function ProfileScreen() {
       );
     }
   }
-  async function login() {
-    setLoginBusy(true);
-    setError("");
-    try {
-      await signIn();
-      await auth.refresh();
-    } catch {
-      setError("Could not complete sign-in. Please try again.");
-    } finally {
-      setLoginBusy(false);
-    }
-  }
   async function logout() {
     await auth.logout();
     utils.profile.get.reset();
     router.replace("/welcome");
   }
   return (
-    <Screen>
+    <Screen preview={false}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
@@ -115,6 +101,50 @@ export default function ProfileScreen() {
           <Badge text="CLOUD SYNC" />
         </View>
         <Body>Your goals are personal. Your fitness space should be, too.</Body>
+        <View style={{ marginTop: 22 }}>
+          <Button
+            title="Settings & preferences"
+            secondary
+            onPress={() => router.push("/settings")}
+            icon="sliders"
+          />
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 15,
+            marginTop: 22,
+            padding: 20,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: p.border,
+            backgroundColor: p.surface,
+          }}
+        >
+          <View
+            style={{
+              width: 55,
+              height: 55,
+              borderRadius: 18,
+              backgroundColor: p.greenDark,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Icon name="user" color={p.green} size={26} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: p.text, fontSize: 18, fontWeight: "600" }}>
+              {auth.user?.name ?? "Your personal space"}
+            </Text>
+            <Body style={{ fontSize: 10, marginTop: 6 }}>
+              {auth.isAuthenticated
+                ? "Real account · Secure cloud profile"
+                : "Guest explorer · Sign in to save your profile"}
+            </Body>
+          </View>
+        </View>
         {auth.loading ? (
           <View style={{ padding: 50 }}>
             <ActivityIndicator color={p.green} />
@@ -149,9 +179,8 @@ export default function ProfileScreen() {
               to the cloud.
             </Body>
             <Button
-              title={loginBusy ? "Opening sign-in…" : "Sign in securely"}
-              onPress={login}
-              disabled={loginBusy}
+              title="Sign in securely"
+              onPress={() => router.push("/login")}
               icon="lock"
             />
             <View style={{ height: 12 }} />
@@ -160,6 +189,13 @@ export default function ProfileScreen() {
               secondary
               onPress={() => router.replace("/(tabs)")}
               icon="compass"
+            />
+            <View style={{ height: 12 }} />
+            <Button
+              title="Create a BodyIQ account"
+              secondary
+              onPress={() => router.push("/register")}
+              icon="user-plus"
             />
           </Card>
         ) : (

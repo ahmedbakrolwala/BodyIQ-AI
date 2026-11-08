@@ -57,7 +57,8 @@ export async function apiCall<T>(
     console.log("[API] Response received");
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("[API] Error response received");
+      if (response.status !== 401)
+        console.warn("[API] Error response received");
       let errorMessage = errorText;
       try {
         const errorJson = JSON.parse(errorText);
@@ -82,7 +83,8 @@ export async function apiCall<T>(
     console.log("[API] Text response received");
     return (text ? JSON.parse(text) : {}) as T;
   } catch (error) {
-    console.error("[API] Request failed");
+    if (!(error instanceof ApiError && error.status === 401))
+      console.warn("[API] Request failed");
     if (error instanceof Error) {
       throw error;
     }

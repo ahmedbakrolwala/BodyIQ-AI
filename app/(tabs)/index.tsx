@@ -1,6 +1,5 @@
 import {
   ImageBackground,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -21,21 +20,20 @@ import {
   Screen,
   Section,
 } from "@/components/bodyiq/ui";
-import { palette as p, trainingImage } from "@/constants/design";
+import { Meter, MiniStat } from "@/components/bodyiq/premium";
+import { palette as p } from "@/constants/design";
+import { useDesignPreview } from "@/lib/preview-context";
+import { sampleDay as d } from "@/lib/sample-data";
 import { trpc } from "@/lib/trpc";
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const wide = width > 720;
+  const { isPreview } = useDesignPreview();
   const status = trpc.foundation.status.useQuery(undefined, {
     staleTime: 60000,
   });
   const today = new Date();
-  const dateLabel = today.toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-  });
   const monday = new Date(today);
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -45,7 +43,15 @@ export default function HomeScreen() {
   });
   return (
     <Screen>
-      <Header home title="A little better. Every day." eyebrow={dateLabel} />
+      <Header
+        home
+        title="Make today count."
+        eyebrow={
+          isPreview
+            ? "Good morning, Alex · Sample profile"
+            : "A fresh start. A stronger tomorrow."
+        }
+      />
       <View style={h.week}>
         {days.map((date, i) => {
           const active = date.toDateString() === today.toDateString();
@@ -54,7 +60,7 @@ export default function HomeScreen() {
               key={i}
               accessible
               accessibilityLabel={`${date.toLocaleDateString("en-IN", { weekday: "long", day: "numeric" })}${active ? ", today" : ""}`}
-              style={[h.day, active && h.dayActive]}
+              style={[h.day, active && { backgroundColor: p.green }]}
             >
               <Text style={[h.dayName, active && { color: p.background }]}>
                 {["M", "T", "W", "T", "F", "S", "S"][i]}
@@ -65,7 +71,13 @@ export default function HomeScreen() {
               <View
                 style={[
                   h.dot,
-                  { backgroundColor: active ? p.background : "transparent" },
+                  {
+                    backgroundColor: active
+                      ? p.background
+                      : isPreview && [0, 2, 3, 5].includes(i)
+                        ? p.green
+                        : "transparent",
+                  },
                 ]}
               />
             </View>
@@ -73,74 +85,91 @@ export default function HomeScreen() {
         })}
       </View>
       <Pressable
-        onPress={() => router.push("/profile")}
         accessibilityRole="button"
-        accessibilityLabel="Set up your fitness profile"
-        style={({ pressed }) => [h.setup, { opacity: pressed ? 0.8 : 1 }]}
+        onPress={() => router.push("/profile")}
+        style={({ pressed }) => [h.goal, { opacity: pressed ? 0.8 : 1 }]}
       >
-        <View style={h.setupIcon}>
-          <Icon name="target" color={p.green} size={24} />
+        <View style={h.goalIcon}>
+          <Icon name="target" color={p.green} size={23} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={h.setupTitle}>Your journey starts with you.</Text>
-          <Body style={{ fontSize: 11, lineHeight: 18 }}>
-            Set your goal. Make this space yours.
+          <Text style={h.goalTitle}>
+            {isPreview
+              ? "Your goal: a little stronger."
+              : "Your journey starts with you."}
+          </Text>
+          <Body style={{ fontSize: 11 }}>
+            {isPreview
+              ? "Sample goal · Build strength, build consistency"
+              : "Set your real goal in your secure profile."}
           </Body>
         </View>
-        <Icon name="arrow-up-right" color={p.green} size={20} />
+        <Icon name="arrow-up-right" color={p.green} size={19} />
       </Pressable>
       <View style={[h.columns, wide && { flexDirection: "row", gap: 20 }]}>
         <View style={{ flex: 1 }}>
-          <Section title="Today’s overview" />
+          <Section title="Today’s activity" />
           <Card>
-            <View style={h.cardHeader}>
-              <Label>DAILY ACTIVITY</Label>
-              <Badge text="FRESH START" />
+            <View style={h.between}>
+              <Label>DAILY MOVEMENT</Label>
+              <Badge text={isPreview ? "70% OF SAMPLE GOAL" : "FRESH START"} />
             </View>
-            <View style={h.overview}>
-              <ActivityRing size={width < 355 ? 110 : 134} />
-              <View style={{ flex: 1, gap: 18 }}>
+            <View style={h.activity}>
+              <ActivityRing
+                value={isPreview ? d.activeKcal : undefined}
+                goal={isPreview ? d.activeGoal : 0}
+                label={isPreview ? "of 600 kcal goal" : "No activity yet"}
+                unit={isPreview ? "kcal burned" : undefined}
+                size={width < 355 ? 125 : 145}
+              />
+              <View style={{ flex: 1, gap: 17 }}>
                 {[
                   {
-                    icon: "zap",
-                    title: "Movement",
+                    label: "Movement",
+                    value: isPreview ? "420" : "—",
                     unit: "kcal",
+                    icon: "zap",
                     color: p.green,
                   },
                   {
-                    icon: "activity",
-                    title: "Training",
+                    label: "Training",
+                    value: isPreview ? "35" : "—",
                     unit: "min",
+                    icon: "activity",
                     color: p.lavender,
                   },
                   {
-                    icon: "navigation",
-                    title: "Steps",
+                    label: "Steps",
+                    value: isPreview ? "6,840" : "—",
                     unit: "steps",
+                    icon: "navigation",
                     color: p.blue,
                   },
                 ].map((item) => (
-                  <View key={item.title} style={h.activityRow}>
+                  <View key={item.label} style={h.activityRow}>
                     <Icon
                       name={item.icon as IconName}
-                      size={16}
                       color={item.color}
+                      size={15}
                     />
                     <View style={{ flex: 1 }}>
-                      <Text style={h.activityName}>{item.title}</Text>
+                      <Text style={h.metricName}>{item.label}</Text>
+                      <Text style={h.metric}>
+                        {item.value}
+                        <Text style={h.unit}> {item.unit}</Text>
+                      </Text>
                     </View>
-                    <Text style={h.metric}>
-                      — <Text style={h.unit}>{item.unit}</Text>
-                    </Text>
                   </View>
                 ))}
               </View>
             </View>
             <View style={h.divider} />
-            <View style={h.cardFoot}>
-              <Icon name="sun" size={13} color={p.green} />
+            <View style={h.foot}>
+              <Icon name="sun" color={p.green} size={13} />
               <Text style={h.footText}>
-                A blank canvas. A stronger tomorrow.
+                {isPreview
+                  ? "Small wins add up. Keep your rhythm."
+                  : "A blank canvas. A stronger tomorrow."}
               </Text>
             </View>
           </Card>
@@ -148,103 +177,131 @@ export default function HomeScreen() {
         <View style={{ flex: 1 }}>
           <Section
             title="Fuel your day"
-            action="Nutrition"
+            action="View nutrition"
             onPress={() => router.push("/(tabs)/nutrition")}
           />
           <Card>
-            <View style={h.cardHeader}>
+            <View style={h.between}>
               <Label>DAILY NUTRITION</Label>
-              <Icon name="pie-chart" color={p.orange} size={16} />
+              <Icon name="pie-chart" color={p.orange} size={18} />
             </View>
-            <View style={h.calories}>
-              <Text style={h.calorieValue}>
-                —<Text style={h.calorieUnit}> kcal</Text>
+            <View style={h.calorieRow}>
+              <Text style={h.calories}>
+                {isPreview ? "1,680" : "—"}
+                <Text style={h.calorieUnit}> kcal</Text>
               </Text>
-              <Text style={h.calorieCaption}>
-                Your calorie goal will appear here
+              <Text style={h.goalCaption}>
+                {isPreview ? "of 2,200 kcal" : "Goal not set"}
               </Text>
             </View>
-            <View style={h.track}>
-              <View
-                style={{
-                  width: 6,
-                  height: 5,
-                  borderRadius: 4,
-                  backgroundColor: p.green,
-                }}
-              />
-            </View>
+            <Meter
+              value={isPreview ? d.calories : 0}
+              goal={isPreview ? d.calorieGoal : 0}
+            />
+            <Text style={h.remaining}>
+              {isPreview
+                ? "520 kcal remaining · Sample"
+                : "Your calorie goal will appear here"}
+            </Text>
             <View style={h.macros}>
               {[
-                { label: "Protein", color: p.green },
-                { label: "Carbs", color: p.lavender },
-                { label: "Fats", color: p.orange },
-              ].map((macro) => (
-                <View key={macro.label} style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 5,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 5,
-                        height: 5,
-                        borderRadius: 3,
-                        backgroundColor: macro.color,
-                      }}
-                    />
-                    <Text style={h.macroLabel}>{macro.label}</Text>
-                  </View>
+                {
+                  label: "Protein",
+                  value: d.protein.value,
+                  goal: d.protein.goal,
+                  color: p.green,
+                },
+                {
+                  label: "Carbs",
+                  value: d.carbs.value,
+                  goal: d.carbs.goal,
+                  color: p.lavender,
+                },
+                {
+                  label: "Fats",
+                  value: d.fats.value,
+                  goal: d.fats.goal,
+                  color: p.orange,
+                },
+              ].map((item) => (
+                <View key={item.label} style={{ flex: 1, gap: 9 }}>
+                  <Text style={h.macroLabel}>{item.label}</Text>
                   <Text style={h.macroValue}>
-                    — <Text style={h.unit}>g</Text>
+                    {isPreview ? item.value : "—"}
+                    <Text style={h.unit}> g</Text>
                   </Text>
+                  <Meter
+                    value={isPreview ? item.value : 0}
+                    goal={isPreview ? item.goal : 0}
+                    color={item.color}
+                    height={3}
+                  />
                 </View>
               ))}
             </View>
           </Card>
         </View>
       </View>
+      <View style={h.stats}>
+        <MiniStat
+          icon="navigation"
+          title="Daily steps"
+          value={isPreview ? "6,840" : "—"}
+          unit="steps"
+          color={p.blue}
+        />
+        <MiniStat
+          icon="droplet"
+          title="Stay hydrated"
+          value={isPreview ? "1.75" : "—"}
+          unit="L"
+          color={p.lavender}
+        />
+      </View>
       <Section
-        title="Find your rhythm"
-        action="View workouts"
+        title="Your next move"
+        action="All workouts"
         onPress={() => router.push("/(tabs)/workouts")}
       />
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Explore upcoming workout plans"
+        accessibilityLabel="Explore full body strength workout preview"
         onPress={() => router.push("/(tabs)/workouts")}
-        style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
       >
         <ImageBackground
-          source={
-            Platform.OS === "web"
-              ? { uri: trainingImage }
-              : require("@/assets/images/training.jpg")
-          }
+          source={require("@/assets/images/training.jpg")}
           style={h.workout}
-          imageStyle={{ borderRadius: 20 }}
+          imageStyle={{ borderRadius: 22, width: "100%", height: "100%" }}
         >
-          <View style={h.workoutTint} />
+          <View style={h.tint} />
           <View style={h.workoutContent}>
-            <Badge text="WORKOUTS · COMING NEXT" />
+            <Badge
+              text={
+                isPreview ? "RECOMMENDED · SAMPLE" : "WORKOUTS · COMING NEXT"
+              }
+            />
             <Text style={h.workoutTitle}>Strength for{"\n"}real life.</Text>
-            <Text style={h.workoutSub}>Your future training space</Text>
+            <View style={h.workoutMeta}>
+              <Icon name="clock" color={p.text} size={12} />
+              <Text style={h.workoutSub}>
+                {isPreview
+                  ? "35 min · Full body · Intermediate"
+                  : "Your future training space"}
+              </Text>
+            </View>
           </View>
           <View style={h.workoutArrow}>
             <Icon name="arrow-up-right" color={p.background} />
           </View>
         </ImageBackground>
       </Pressable>
-      <Section title="Your fitness, connected" />
+      <Section title="A smarter fitness space" />
       <View style={h.shortcuts}>
         {[
           {
-            icon: "pie-chart",
-            text: "Nutrition",
-            href: "/(tabs)/nutrition",
+            icon: "camera",
+            text: "Scan food",
+            href: "/scanner",
             color: p.orange,
           },
           {
@@ -263,7 +320,7 @@ export default function HomeScreen() {
           <Pressable
             key={item.text}
             accessibilityRole="button"
-            onPress={() => router.push(item.href as "/(tabs)/nutrition")}
+            onPress={() => router.push(item.href as "/scanner")}
             style={({ pressed }) => [
               h.shortcut,
               { opacity: pressed ? 0.7 : 1 },
@@ -271,10 +328,27 @@ export default function HomeScreen() {
           >
             <Icon name={item.icon as IconName} color={item.color} size={22} />
             <Text style={h.shortcutText}>{item.text}</Text>
-            <Icon name="arrow-right" size={12} />
+            <Icon name="arrow-right" size={13} />
           </Pressable>
         ))}
       </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push("/(tabs)/coach")}
+        style={h.insight}
+      >
+        <Icon name="zap" color={p.green} size={20} />
+        <View style={{ flex: 1 }}>
+          <Label>BODYIQ INTELLIGENCE</Label>
+          <Text style={h.insightText}>
+            Big changes begin with small habits.
+          </Text>
+          <Body style={{ fontSize: 10 }}>
+            Explore the future of personal coaching.
+          </Body>
+        </View>
+        <Icon name="chevron-right" size={17} />
+      </Pressable>
       <View style={h.status}>
         <View
           style={[
@@ -287,15 +361,15 @@ export default function HomeScreen() {
           ]}
         />
         <Text style={h.statusText}>
-          {status.isLoading
-            ? "Connecting to BodyIQ Cloud…"
-            : status.data?.databaseReachable
-              ? "BODYIQ CLOUD CONNECTED"
-              : "CLOUD CONNECTION UNAVAILABLE"}
+          {status.data?.databaseReachable
+            ? "BODYIQ CLOUD CONNECTED"
+            : "CONNECTING TO BODYIQ CLOUD"}
         </Text>
-        <Text style={h.version}>PHASE 01</Text>
       </View>
-      <PreviewNotice />
+      <PreviewNotice>
+        All fitness values shown in Design Preview are illustrative. Only your
+        signed-in basic profile is stored in the cloud.
+      </PreviewNotice>
     </Screen>
   );
 }
@@ -304,120 +378,143 @@ const h = StyleSheet.create({
   day: {
     flex: 1,
     alignItems: "center",
-    borderRadius: 14,
+    backgroundColor: "#131713",
+    borderRadius: 15,
     paddingVertical: 11,
     gap: 7,
-    backgroundColor: "#111411",
   },
-  dayActive: { backgroundColor: p.green },
   dayName: { color: p.muted, fontSize: 10 },
-  dayNumber: { color: p.text, fontSize: 15, fontWeight: "600" },
+  dayNumber: { color: p.text, fontSize: 16, fontWeight: "600" },
   dot: { width: 4, height: 4, borderRadius: 4 },
-  setup: {
+  goal: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     padding: 16,
     borderRadius: 17,
     borderWidth: 1,
-    borderColor: "#C3FF5C28",
-    backgroundColor: "#182014",
+    borderColor: "#C3FF5C24",
+    backgroundColor: "#192113",
   },
-  setupIcon: {
-    height: 42,
-    width: 42,
-    justifyContent: "center",
+  goalIcon: {
+    height: 43,
+    width: 43,
+    borderRadius: 14,
     alignItems: "center",
-    borderRadius: 12,
-    backgroundColor: "#C3FF5C10",
+    justifyContent: "center",
+    backgroundColor: "#C3FF5C0D",
   },
-  setupTitle: {
+  goalTitle: {
     color: p.text,
-    fontWeight: "600",
     fontSize: 13,
-    marginBottom: 3,
+    fontWeight: "600",
+    marginBottom: 4,
   },
   columns: { gap: 0 },
-  cardHeader: {
+  between: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
+    gap: 8,
   },
-  overview: {
+  activity: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    marginTop: 15,
-    marginBottom: 12,
+    gap: 18,
+    marginVertical: 20,
   },
-  activityRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  activityName: { color: p.muted, fontSize: 11 },
-  metric: { color: p.text, fontSize: 15, fontWeight: "600" },
-  unit: { color: p.muted, fontSize: 9, fontWeight: "400" },
+  activityRow: { flexDirection: "row", gap: 9, alignItems: "center" },
+  metricName: { color: p.muted, fontSize: 10, marginBottom: 5 },
+  metric: { color: p.text, fontSize: 18, fontWeight: "600" },
+  unit: { color: p.muted, fontSize: 10, fontWeight: "400" },
   divider: { height: 1, backgroundColor: p.border },
-  cardFoot: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    marginTop: 12,
-  },
+  foot: { flexDirection: "row", gap: 7, alignItems: "center", marginTop: 13 },
   footText: { color: p.muted, fontSize: 10 },
-  calories: { marginTop: 24, marginBottom: 20 },
-  calorieValue: { color: p.text, fontSize: 32, fontWeight: "600" },
-  calorieUnit: { color: p.muted, fontSize: 12, fontWeight: "400" },
-  calorieCaption: { color: p.muted, fontSize: 10, marginTop: 7 },
-  track: { height: 5, borderRadius: 4, backgroundColor: p.border },
-  macros: { flexDirection: "row", marginTop: 22, paddingBottom: 8 },
-  macroLabel: { color: p.muted, fontSize: 10 },
-  macroValue: { color: p.text, fontSize: 16, marginTop: 8 },
-  workout: {
-    height: 214,
-    backgroundColor: p.surface,
-    borderRadius: 20,
-    overflow: "hidden",
-    justifyContent: "center",
+  calorieRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 28,
+    marginBottom: 20,
   },
-  workoutTint: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    left: 0,
-    bottom: 0,
-    backgroundColor: "#00000030",
-  },
-  workoutContent: { padding: 22, gap: 10 },
-  workoutTitle: {
+  calories: {
     color: p.text,
-    fontSize: 28,
-    lineHeight: 33,
+    fontSize: 32,
     fontWeight: "600",
     letterSpacing: -0.8,
   },
-  workoutSub: { color: "#C2C9C2", fontSize: 11 },
+  calorieUnit: { color: p.muted, fontSize: 11, fontWeight: "400" },
+  goalCaption: { color: p.muted, fontSize: 10 },
+  remaining: { color: p.muted, fontSize: 10, marginTop: 10 },
+  macros: { flexDirection: "row", gap: 16, marginTop: 25, paddingBottom: 12 },
+  macroLabel: { color: p.muted, fontSize: 10 },
+  macroValue: { color: p.text, fontSize: 18, fontWeight: "500" },
+  stats: { flexDirection: "row", gap: 12, marginTop: 16 },
+  workout: {
+    height: 230,
+    borderRadius: 22,
+    overflow: "hidden",
+    backgroundColor: p.surface,
+  },
+  tint: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#00000028",
+  },
+  workoutContent: { padding: 24, gap: 14 },
+  workoutTitle: {
+    color: p.text,
+    fontSize: 31,
+    lineHeight: 36,
+    fontWeight: "600",
+    letterSpacing: -1,
+  },
+  workoutMeta: { flexDirection: "row", gap: 6, alignItems: "center" },
+  workoutSub: { color: "#CDD5C9", fontSize: 10 },
   workoutArrow: {
     position: "absolute",
-    bottom: 20,
     right: 20,
-    width: 38,
-    height: 38,
+    bottom: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: p.green,
-    borderRadius: 12,
   },
   shortcuts: { flexDirection: "row", gap: 10 },
   shortcut: {
     flex: 1,
-    backgroundColor: p.surface,
-    borderRadius: 16,
+    gap: 13,
+    borderRadius: 17,
     borderWidth: 1,
     borderColor: p.border,
+    backgroundColor: p.surface,
     padding: 16,
-    gap: 14,
   },
   shortcutText: { color: p.text, fontSize: 11, fontWeight: "500" },
-  status: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 28 },
-  statusText: { color: p.muted, fontSize: 8, letterSpacing: 0.8, flex: 1 },
-  version: { color: p.muted, fontSize: 8, letterSpacing: 1 },
+  insight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#C3FF5C20",
+    backgroundColor: "#151D11",
+    padding: 18,
+    marginTop: 24,
+  },
+  insightText: {
+    color: p.text,
+    fontSize: 13,
+    fontWeight: "500",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  status: { flexDirection: "row", gap: 6, alignItems: "center", marginTop: 28 },
+  statusText: { color: p.muted, fontSize: 8, letterSpacing: 0.8 },
 });

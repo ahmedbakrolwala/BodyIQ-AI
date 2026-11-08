@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
+import React, { PropsWithChildren, useEffect, useState } from "react";
 import {
   AccessibilityInfo,
   Animated,
@@ -9,11 +9,14 @@ import {
   Text,
   View,
   ViewStyle,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { palette as p } from "@/constants/design";
+import { useDesignPreview } from "@/lib/preview-context";
+import { PreviewBanner } from "./preview-banner";
 
 export type IconName = React.ComponentProps<typeof Feather>["name"];
 export function Icon({
@@ -55,14 +58,15 @@ export function FadeIn({
   children,
   style,
 }: PropsWithChildren<{ style?: ViewStyle }>) {
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [opacity] = useState(() => new Animated.Value(0));
+  const { reduceMotion } = useDesignPreview();
   useEffect(() => {
     let mounted = true;
     AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
       if (mounted)
         Animated.timing(opacity, {
           toValue: 1,
-          duration: reduced ? 0 : 300,
+          duration: reduced || reduceMotion ? 0 : 300,
           useNativeDriver: true,
         }).start();
     });
@@ -70,17 +74,28 @@ export function FadeIn({
       mounted = false;
       opacity.stopAnimation();
     };
-  }, [opacity]);
+  }, [opacity, reduceMotion]);
   return <Animated.View style={[style, { opacity }]}>{children}</Animated.View>;
 }
-export function Screen({ children }: PropsWithChildren) {
+export function Screen({
+  children,
+  preview = true,
+}: PropsWithChildren<{ preview?: boolean }>) {
+  const { width } = useWindowDimensions();
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={s.screen}>
       <ScrollView
-        contentContainerStyle={s.content}
+        contentContainerStyle={[
+          s.content,
+          { padding: width < 360 ? 18 : 24, paddingBottom: 32 },
+        ]}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <FadeIn>{children}</FadeIn>
+        <FadeIn>
+          {preview && <PreviewBanner />}
+          {children}
+        </FadeIn>
       </ScrollView>
     </SafeAreaView>
   );

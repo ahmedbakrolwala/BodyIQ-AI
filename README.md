@@ -10,6 +10,12 @@ The app includes branded splash/welcome screens, reusable dark/green UI, five-ta
 
 Advanced meal logging, calorie estimation, workout generation, health measurements, AI chat and coaching are deliberately not active. Empty charts contain no fabricated data. Future-domain database tables are schema foundations only.
 
+## Premium interface upgrade
+
+The existing project now includes polished Welcome, Login, Registration, Home, Nutrition, Food Scanner, Workouts, Progress, AI Coach, Profile, Settings and support screens. The five-tab fitness navigation remains intact. Login/Registration use the preserved OAuth provider; Profile still saves real authenticated basic account data to the cloud.
+
+Design Preview shows explicitly labeled, local-only sample data. The banner eye control and Settings switch hide samples and restore empty states. Scanner results and Coach conversations are predefined design demos, not live recognition or AI. Preview preferences are device-local and samples are never seeded into the database. Read `docs/INTERFACE_REPORT.md` for screen and interaction checks, completed refinements and release-stage limits.
+
 ## Run inside the Manus project
 
 The Dashboard Preview is connected to this project's Expo/Metro runtime. Managed environment values are supplied by Manus. Do not paste credentials into source files or chat.
