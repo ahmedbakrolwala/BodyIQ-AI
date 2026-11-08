@@ -2,6 +2,7 @@ import {
   index,
   int,
   json,
+  double,
   mysqlEnum,
   mysqlTable,
   text,
@@ -246,3 +247,92 @@ export type AuthIdentity = typeof authIdentities.$inferSelect;
 export type AuthOAuthState = typeof authOAuthStates.$inferSelect;
 export type AuthBridgeCode = typeof authBridgeCodes.$inferSelect;
 export type AuthRateLimit = typeof authRateLimits.$inferSelect;
+
+/** User-owned nutrition events. clientId is an offline-safe idempotency key. */
+export const foodLogs = mysqlTable(
+  "foodLogs",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    clientId: varchar("clientId", { length: 36 }).notNull(),
+    name: varchar("name", { length: 100 }).notNull(),
+    mealType: mysqlEnum("mealType", [
+      "breakfast",
+      "lunch",
+      "dinner",
+      "snack",
+    ]).notNull(),
+    calories: double("calories").notNull(),
+    proteinG: double("proteinG").notNull(),
+    carbsG: double("carbsG").notNull(),
+    fatG: double("fatG").notNull(),
+    recordedAt: timestamp("recordedAt").notNull(),
+  },
+  (table) => [
+    uniqueIndex("foodLogs_user_client_unique").on(table.userId, table.clientId),
+    index("foodLogs_user_recorded_idx").on(table.userId, table.recordedAt),
+  ],
+);
+
+export type FoodLog = typeof foodLogs.$inferSelect;
+export type InsertFoodLog = typeof foodLogs.$inferInsert;
+
+/** Saved-plan workout snapshots. A non-null activeUserId marks the one active workout. */
+export const trainingLogs = mysqlTable(
+  "trainingLogs",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    clientId: varchar("clientId", { length: 36 }).notNull(),
+    name: varchar("name", { length: 160 }).notNull(),
+    exercisePlan: json("exercisePlan").notNull(),
+    startedAt: timestamp("startedAt").notNull(),
+    completedAt: timestamp("completedAt"),
+    activeUserId: int("activeUserId").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+  },
+  (table) => [
+    uniqueIndex("trainingLogs_user_client_unique").on(
+      table.userId,
+      table.clientId,
+    ),
+    uniqueIndex("trainingLogs_active_user_unique").on(table.activeUserId),
+    index("trainingLogs_user_started_idx").on(table.userId, table.startedAt),
+    index("trainingLogs_user_completed_idx").on(
+      table.userId,
+      table.completedAt,
+    ),
+  ],
+);
+
+export type TrainingLog = typeof trainingLogs.$inferSelect;
+export type InsertTrainingLog = typeof trainingLogs.$inferInsert;
+
+/** User-owned body-weight events, retained even when no fitness profile exists. */
+export const weightLogs = mysqlTable(
+  "weightLogs",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    clientId: varchar("clientId", { length: 36 }).notNull(),
+    weightKg: double("weightKg").notNull(),
+    recordedAt: timestamp("recordedAt").notNull(),
+  },
+  (table) => [
+    uniqueIndex("weightLogs_user_client_unique").on(
+      table.userId,
+      table.clientId,
+    ),
+    index("weightLogs_user_recorded_idx").on(table.userId, table.recordedAt),
+  ],
+);
+
+export type WeightLog = typeof weightLogs.$inferSelect;
+export type InsertWeightLog = typeof weightLogs.$inferInsert;

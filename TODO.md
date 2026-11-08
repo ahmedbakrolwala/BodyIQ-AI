@@ -54,3 +54,13 @@ Every requested screen rendered in mobile Preview. Browser navigation, scanner/m
 - [x] Validate ownership, inputs, conversions, calculations and mobile flow; apply additive migration and save maintainable source. Do not bypass authentication or seed personal data.
 
 Verification: 77 tests pass; TypeScript/lint/backend build and final web/Android/iOS JavaScript exports pass. Cloud migration 0003 is applied. Five-step browser-only fixture save/edit tests pass with no live health records written. Review findings corrected; physical-phone checks remain unverified. See docs/ONBOARDING_REPORT.md.
+
+# Functional home dashboard
+
+- [x] Real-user Home displays daily calorie target, consumed and remaining calories; consumed/target protein, carbs and fat; today's workout; completed weekly frequency; current weight and recent progress. No sample numbers are used in the authenticated dashboard.
+- [x] Database-backed meal logging, workout start/completion and weight update actions drive the dashboard. Scanner navigation remains functional and explicitly labels any scanner demo as non-recorded sample data.
+- [x] Secure authenticated ownership, validation, idempotent writes and time-zone-aware daily/weekly aggregation; preserve existing auth, onboarding, profiles and design.
+- [x] Automatically refresh after food/workout/weight/profile mutations, on return to Home and foreground; cross-device polling/retry states, no fabricated fallbacks or stale private-account data.
+- [x] Validate isolated tracking operations, totals/boundaries/ownership and mobile navigation; migrate additive tables and deliver source/report with clear verification limits.
+
+Verification: additive tracking migration 0004 applied; 90 tests across 17 suites pass; TypeScript/lint/backend build pass; cross-platform JavaScript exports checked. Browser-only fixture verified meal, zero-value, weight and workout saves and Home refresh without live health writes. See docs/DASHBOARD_REPORT.md for limits.

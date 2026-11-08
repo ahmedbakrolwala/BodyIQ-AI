@@ -1,9 +1,11 @@
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { EmptyChart, SampleTrend } from "@/components/bodyiq/charts";
 import {
   Badge,
   Body,
+  Button,
   Card,
   EmptyState,
   Header,
@@ -33,6 +35,12 @@ export default function ProgressScreen() {
   return (
     <Screen>
       <Header title="Small steps. Real change." eyebrow="PROGRESS" />
+      <View style={{ marginVertical: 16 }}>
+        <Button
+          title="Record my weight"
+          onPress={() => router.push("/log-weight")}
+        />
+      </View>
       <Body style={{ marginBottom: 22 }}>
         A clearer picture of your journey — beyond just a number.
       </Body>

@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import type { UserProfile } from "../../drizzle/schema";
-import { fitnessProfiles, userProfiles } from "../../drizzle/schema";
+import { fitnessProfiles, userProfiles, users } from "../../drizzle/schema";
 import type { ProfileSaveInput } from "../../shared/profile";
 import { getDb } from "../db";
 
@@ -39,6 +39,11 @@ export async function upsertProfile(
 
   await db.transaction(async (tx) => {
     const updatedAt = new Date();
+    // Use the required owner row as the common lock with fitness saves and
+    // weight logging; a user can exist before either profile row does.
+    await tx.execute(
+      sql`SELECT id FROM ${users} WHERE id = ${userId} FOR UPDATE`,
+    );
     await tx
       .insert(userProfiles)
       .values(values)

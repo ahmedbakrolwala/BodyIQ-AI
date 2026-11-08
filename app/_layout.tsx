@@ -1,3 +1,4 @@
+import { TrackingRefreshBridge } from "@/lib/tracking-client";
 import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -92,6 +93,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <DesignPreviewProvider>
+              <TrackingRefreshBridge />
               {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
               {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
               {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
@@ -116,6 +118,9 @@ export default function RootLayout() {
                 <Stack.Screen name="profile" />
                 <Stack.Screen name="onboarding" />
                 <Stack.Screen name="fitness-profile" />
+                <Stack.Screen name="log-meal" />
+                <Stack.Screen name="workout-session" />
+                <Stack.Screen name="log-weight" />
                 <Stack.Screen name="settings" />
                 <Stack.Screen name="support" />
                 <Stack.Screen name="oauth/callback" />

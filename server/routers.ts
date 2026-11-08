@@ -9,6 +9,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { isDatabaseReachable } from "./db";
 import { fitnessRouter } from "./routers/fitness";
 import { profileRouter } from "./routers/profile";
+import { trackingRouter } from "./routers/tracking";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -33,6 +34,7 @@ export const appRouter = router({
   }),
   profile: profileRouter,
   fitness: fitnessRouter,
+  tracking: trackingRouter,
   foundation: router({
     status: publicProcedure.query(async () => ({
       service: "BodyIQ AI",

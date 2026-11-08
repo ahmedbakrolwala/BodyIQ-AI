@@ -1,5 +1,11 @@
-import { eq } from "drizzle-orm";
-import { fitnessProfiles, userProfiles } from "../../drizzle/schema";
+import { randomUUID } from "node:crypto";
+import { eq, sql } from "drizzle-orm";
+import {
+  fitnessProfiles,
+  userProfiles,
+  users,
+  weightLogs,
+} from "../../drizzle/schema";
 import type { FitnessInput, FitnessPlan } from "../../shared/fitness";
 import { fitnessInputSchema } from "../../shared/fitness";
 import { deriveFitnessPlan } from "../../shared/fitness-planning";
@@ -43,6 +49,27 @@ export async function upsertFitnessProfile(
 
   await db.transaction(async (tx) => {
     const updatedAt = new Date();
+    // All profile editors and weight logging serialize on the required users
+    // row, which exists even when no optional fitness profile exists.
+    await tx.execute(
+      sql`SELECT id FROM ${users} WHERE id = ${userId} FOR UPDATE`,
+    );
+    const currentRows = await tx
+      .select({ profile: fitnessProfiles.profile })
+      .from(fitnessProfiles)
+      .where(eq(fitnessProfiles.userId, userId))
+      .limit(1);
+    const currentProfile = currentRows[0]
+      ? fitnessInputSchema.safeParse(currentRows[0].profile).data
+      : undefined;
+    if (currentProfile?.weightKg !== profile.weightKg) {
+      await tx.insert(weightLogs).values({
+        userId,
+        clientId: randomUUID(),
+        weightKg: profile.weightKg,
+        recordedAt: updatedAt,
+      });
+    }
 
     // Both profile editors update the basic row before the fitness row. This
     // gives concurrent edits a consistent lock order and avoids unit drift.

@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { FitnessPersonalization } from "@/components/bodyiq/fitness-personalization";
 import { useState } from "react";
 import {
@@ -10,6 +11,7 @@ import {
 import {
   Badge,
   Body,
+  Button,
   Card,
   EmptyState,
   Header,
@@ -46,6 +48,12 @@ export default function WorkoutsScreen() {
   return (
     <Screen>
       <Header title="Made to move." eyebrow="WORKOUTS" />
+      <View style={{ marginVertical: 16 }}>
+        <Button
+          title="Start or continue my workout"
+          onPress={() => router.push("/workout-session")}
+        />
+      </View>
       <FitnessPersonalization section="workouts" />
       <Body style={{ marginBottom: 20 }}>
         Your future home for purposeful training, at your own pace.

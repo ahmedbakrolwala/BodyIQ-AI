@@ -1,0 +1,9 @@
+# Functional dashboard implementation
+
+Authenticated Home always uses private tracking data, regardless of the sample-preview preference. The prior Home remains a guest-only design preview in its own component. Dashboard data comes from a protected summary endpoint aggregating owner-scoped food, training and weight logs, with onboarding-derived targets. Missing targets/weight remain unknown; empty food/workout aggregates are genuine zeros. Planned workouts are labeled suggestions and completed workouts are separate persisted records.
+
+Add dedicated user-owned foodLogs, trainingLogs and weightLogs tables without deleting existing schemas. Strict APIs expose meal logging, idempotent workout start/completion and weight logging. Server timestamps and IANA time zones determine daily and Monday–Sunday weekly ranges, including daylight-saving boundaries. Weight updates synchronize the fitness profile transactionally so targets are recalculated from current saved measurements.
+
+Reusable client hooks connect new log-meal, workout-session and log-weight screens. Successful tracking/profile mutations invalidate the summary; Home refreshes on route return and foreground, with active-screen polling for other-device changes. Authentication/cache clearing remains with the existing auth provider. Errors never substitute demo values. Scanner navigation remains available but its current recognition UI is a clearly labeled preview; it cannot silently log sample nutrition.
+
+UI modules: real-home renders private cards; demo-home retains guest design; tracking-client owns invalidation/foreground behavior; log forms provide pending, retry and validation states. Shared tracking schemas and date helpers define the contract; protected repositories own storage and summary calculations. No new AI service or sample database seeding is introduced.

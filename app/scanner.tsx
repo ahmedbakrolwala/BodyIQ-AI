@@ -39,6 +39,13 @@ export default function ScannerScreen() {
   return (
     <Screen>
       <BackHeader title="Food scanner" badge="DESIGN DEMO" />
+      <View style={{ marginVertical: 16 }}>
+        <Button
+          title="Log a meal manually"
+          secondary
+          onPress={() => router.push("/log-meal")}
+        />
+      </View>
       <Body style={{ marginBottom: 22 }}>
         A smarter look at what’s on your plate.
       </Body>

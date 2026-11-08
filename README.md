@@ -2,13 +2,17 @@
 
 **Your Body. Your Goals. Your AI Coach.**
 
-BodyIQ AI Phase 1 is a professional cross-platform fitness app foundation. It uses TypeScript, React Native, Expo Router and NativeWind with an Express/tRPC API, Drizzle ORM and Manus-managed MySQL-compatible cloud data. This is a real source-code project, not a static screen mockup.
+BodyIQ AI is a cross-platform fitness application built with TypeScript, React Native, Expo Router and NativeWind, an Express/tRPC API, Drizzle ORM and Manus-managed MySQL-compatible cloud data. This is a real source-code project, not a static screen mockup.
 
-## Phase 1
+## Functional Home dashboard
+
+Authenticated Home shows database-backed calories/macros, current weight, weekly workout frequency, actual sessions and recent progress. Meal logging, workout start/completion and weight updates persist private records and refresh Home automatically. Missing data is not replaced by sample numbers. The prior Home remains a guest-only design preview. Scanner navigation/manual logging work, but recognition remains a labeled demo. Migration 0004 adds owner-scoped tracking tables. See `docs/DASHBOARD_REPORT.md` for the completed functionality, synchronization policy, tests and limitations.
+
+## Phase 1 history
 
 The app includes branded splash/welcome screens, reusable dark/green UI, five-tab navigation, Home/Nutrition/Workouts/Progress/AI Coach placeholders, functioning navigation and concept previews, secure Manus OAuth, and a basic cloud profile editor. The profile persists a display name, broad fitness goal, country code and preferred units. Guests can explore without saving personal data.
 
-Advanced meal logging, calorie estimation, workout generation, health measurements, AI chat and coaching are deliberately not active. Empty charts contain no fabricated data. Future-domain database tables are schema foundations only.
+At the initial Phase 1 delivery, advanced meal logging, calorie estimation, workout generation, health measurements, AI chat and coaching were not active. Later upgrades below supersede those initial boundaries; live AI chat/recognition remain inactive.
 
 ## Premium interface upgrade
 

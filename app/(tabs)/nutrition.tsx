@@ -61,6 +61,12 @@ export default function NutritionScreen() {
   return (
     <Screen>
       <Header title="Fuel with intention." eyebrow="NUTRITION" />
+      <View style={{ marginVertical: 16 }}>
+        <Button
+          title="Log a real meal"
+          onPress={() => router.push("/log-meal")}
+        />
+      </View>
       <FitnessPersonalization section="nutrition" />
       <Body style={{ marginBottom: 20 }}>
         Good food. Better energy. A healthier relationship with your plate.

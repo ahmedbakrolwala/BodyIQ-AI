@@ -18,6 +18,7 @@ export function ActivityRing({
   label = "No activity yet",
   unit,
   color = p.green,
+  dataKind = "sample",
 }: {
   size?: number;
   value?: number;
@@ -25,6 +26,7 @@ export function ActivityRing({
   label?: string;
   unit?: string;
   color?: string;
+  dataKind?: "sample" | "real";
 }) {
   const radius = 59;
   const circumference = 2 * Math.PI * radius;
@@ -35,7 +37,7 @@ export function ActivityRing({
       accessibilityLabel={
         value === undefined
           ? "No activity recorded"
-          : `Sample: ${value} ${unit ?? ""}, goal ${goal}`
+          : `${dataKind === "real" ? "Recorded" : "Sample"}: ${value} ${unit ?? ""}, ${goal > 0 ? `goal ${goal}` : "no target set"}`
       }
       style={{
         width: size,

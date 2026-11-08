@@ -18,11 +18,11 @@ const pages = {
     sections: [
       [
         "Explore the interface",
-        "The main navigation connects Home, Nutrition, Workouts, Progress and AI Coach. Food Scanner is available from Home and Nutrition. Profile opens from the header icon.",
+        "The main navigation connects Home, Nutrition, Workouts, Progress and AI Coach. Food Scanner is available from Home and Nutrition. Profile opens from the header icon. Home quick actions log meals, start/complete workout sessions and record weight; your dashboard updates after saves.",
       ],
       [
         "Sample data, clearly marked",
-        "Design Preview shows illustrative meals, workouts and charts. Tap the eye button in the preview banner, or change the switch in Settings, to hide samples. No sample fitness records are saved to your account.",
+        "Design Preview shows illustrative meals, workouts and charts. Tap the eye button in the preview banner, or change the switch in Settings, to hide samples. No sample fitness records are saved to your account. Authenticated Home always shows real tracking rather than design-preview metrics.",
       ],
       [
         "Save your real profile",
@@ -42,7 +42,7 @@ const pages = {
     sections: [
       [
         "What is stored",
-        "BodyIQ stores authentication identity, your basic account profile, and fitness onboarding answers you choose to save, including age, height, weights, goals, activity, equipment, dietary preferences and allergies. Native session tokens use secure device storage.",
+        "BodyIQ stores authentication identity, your basic account profile, and fitness onboarding answers you choose to save, including age, height, weights, goals, activity, equipment, dietary preferences and allergies. Meals and their entered nutrition amounts, workout starts/completions and recorded weights are also stored when you use tracking. Native session tokens use secure device storage.",
       ],
       [
         "What is not collected",
@@ -84,7 +84,7 @@ const pages = {
       ],
       [
         "Current stage",
-        "This release builds the app foundation and polished design preview. Private account and fitness profiles, estimated targets and starter recommendations are implemented. Live Google/email activation needs provider setup; advanced tracking, food recognition and live AI coaching remain inactive.",
+        "This release builds the app foundation and polished design preview. Private account and fitness profiles, estimated targets, real Home tracking and starter recommendations are implemented. Live Google/email activation needs provider setup; advanced tracking, food recognition and live AI coaching remain inactive.",
       ],
       [
         "Not a medical service",
