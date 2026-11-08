@@ -1,3 +1,4 @@
+import { FitnessPersonalization } from "@/components/bodyiq/fitness-personalization";
 import { useState } from "react";
 import {
   ImageBackground,
@@ -45,6 +46,7 @@ export default function WorkoutsScreen() {
   return (
     <Screen>
       <Header title="Made to move." eyebrow="WORKOUTS" />
+      <FitnessPersonalization section="workouts" />
       <Body style={{ marginBottom: 20 }}>
         Your future home for purposeful training, at your own pace.
       </Body>

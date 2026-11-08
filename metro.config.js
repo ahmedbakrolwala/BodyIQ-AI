@@ -5,4 +5,6 @@ const config = getDefaultConfig(__dirname);
 
 module.exports = withNativeWind(config, {
   input: "./global.css",
+  // Avoid incompatible synthetic virtual-file events in the installed Metro.
+  forceWriteFileSystem: true,
 });

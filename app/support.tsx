@@ -26,7 +26,7 @@ const pages = {
       ],
       [
         "Save your real profile",
-        "Use Sign in or Create account to continue through the existing Manus authentication provider. A signed-in user can save a name, goal, country code and preferred units to the cloud.",
+        "Sign in to save your private fitness profile. Start the five-step onboarding from Home, Nutrition, Workouts or Profile; review and edit it through View my fitness profile. Existing Manus access remains available while Google/email delivery awaits configuration.",
       ],
       [
         "Scanner and coach demos",
@@ -42,11 +42,11 @@ const pages = {
     sections: [
       [
         "What is stored",
-        "The real account system stores authentication identity and your basic profile: name, broad fitness goal, country and preferred units. Native session tokens use secure device storage.",
+        "BodyIQ stores authentication identity, your basic account profile, and fitness onboarding answers you choose to save, including age, height, weights, goals, activity, equipment, dietary preferences and allergies. Native session tokens use secure device storage.",
       ],
       [
         "What is not collected",
-        "This interface preview does not capture camera images, log meals, store health measurements, or send conversations to an AI service. Demo fitness and coach data are predefined and not saved to the cloud.",
+        "Design previews do not capture camera images, log meals or send conversations to an AI service. Demo metrics are not saved to the cloud. Measurements you explicitly save through fitness onboarding are private account records, not demo data.",
       ],
       [
         "Device preferences",
@@ -54,7 +54,7 @@ const pages = {
       ],
       [
         "Your secure access",
-        "Passwords are handled by the existing authentication provider, not BodyIQ. Sign out from Profile to end your app session. This overview describes the current prototype; it is not a finalized production privacy policy.",
+        "BodyIQ email passwords are stored only as salted memory-hard hashes; Google and Manus credentials remain with their providers. Sign out to revoke your current session. Account security includes confirmed account deletion. This overview is not a finalized production privacy policy.",
       ],
     ],
   },
@@ -84,7 +84,7 @@ const pages = {
       ],
       [
         "Current stage",
-        "This release builds the app foundation and polished design preview. Secure accounts and a basic cloud profile are active; advanced fitness tracking, food recognition and live AI coaching are not active yet.",
+        "This release builds the app foundation and polished design preview. Private account and fitness profiles, estimated targets and starter recommendations are implemented. Live Google/email activation needs provider setup; advanced tracking, food recognition and live AI coaching remain inactive.",
       ],
       [
         "Not a medical service",

@@ -114,6 +114,8 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="scanner" />
                 <Stack.Screen name="profile" />
+                <Stack.Screen name="onboarding" />
+                <Stack.Screen name="fitness-profile" />
                 <Stack.Screen name="settings" />
                 <Stack.Screen name="support" />
                 <Stack.Screen name="oauth/callback" />

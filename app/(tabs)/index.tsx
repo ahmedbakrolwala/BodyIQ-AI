@@ -1,3 +1,4 @@
+import { FitnessPersonalization } from "@/components/bodyiq/fitness-personalization";
 import {
   ImageBackground,
   Pressable,
@@ -52,6 +53,7 @@ export default function HomeScreen() {
             : "A fresh start. A stronger tomorrow."
         }
       />
+      <FitnessPersonalization section="home" />
       <View style={h.week}>
         {days.map((date, i) => {
           const active = date.toDateString() === today.toDateString();

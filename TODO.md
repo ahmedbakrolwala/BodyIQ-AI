@@ -45,3 +45,12 @@ Every requested screen rendered in mobile Preview. Browser navigation, scanner/m
 ## Authentication verification evidence
 
 67 tests pass across 11 suites, including real scrypt and signed-JWT HTTP lifecycle tests. TypeScript, targeted lint, backend build and final web/Android/iOS JavaScript exports pass. Eight additive cloud auth tables are ready; API/Metro return HTTP 200. Provider-dependent routes return clear 503 configuration errors. The read-only review findings were corrected with atomic reset/deletion, owned revocable SID transport, strict auth body limits, persistent throttles, legacy callback protection and logout consistency. Live Google/email delivery, physical-phone OAuth and signed releases remain unverified until provider setup. See docs/AUTH_BACKEND.md.
+
+# Fitness onboarding
+
+- [x] Mobile step-by-step onboarding collects age, height, current weight, optional target weight, experience, primary goal (muscle gain, fat loss, maintenance, strength, general fitness), activity, gym/home, equipment, diet, allergies and metric/imperial units.
+- [x] Store validated canonical metric values in a private user-owned cloud profile; display/edit saved information and recalculate estimated calorie/macronutrient targets on edit. Preserve existing account/profile features.
+- [x] Personalize dashboard, meal plans and workout guidance from saved profile, separating sample previews from real recommendations. Apply dietary/allergy/equipment restrictions and conservative estimation limits.
+- [x] Validate ownership, inputs, conversions, calculations and mobile flow; apply additive migration and save maintainable source. Do not bypass authentication or seed personal data.
+
+Verification: 77 tests pass; TypeScript/lint/backend build and final web/Android/iOS JavaScript exports pass. Cloud migration 0003 is applied. Five-step browser-only fixture save/edit tests pass with no live health records written. Review findings corrected; physical-phone checks remain unverified. See docs/ONBOARDING_REPORT.md.

@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { UserProfile } from "../../drizzle/schema";
-import { userProfiles } from "../../drizzle/schema";
+import { fitnessProfiles, userProfiles } from "../../drizzle/schema";
 import type { ProfileSaveInput } from "../../shared/profile";
 import { getDb } from "../db";
 
@@ -37,18 +37,31 @@ export async function upsertProfile(
     units: input.units,
   };
 
-  await db
-    .insert(userProfiles)
-    .values(values)
-    .onDuplicateKeyUpdate({
-      set: {
-        displayName: input.displayName,
-        goal: input.goal,
-        country: input.country,
-        units: input.units,
-        updatedAt: new Date(),
-      },
-    });
+  await db.transaction(async (tx) => {
+    const updatedAt = new Date();
+    await tx
+      .insert(userProfiles)
+      .values(values)
+      .onDuplicateKeyUpdate({
+        set: {
+          displayName: input.displayName,
+          goal: input.goal,
+          country: input.country,
+          units: input.units,
+          updatedAt,
+        },
+      });
+
+    // Keep the two editors convergent without changing the legacy three-value
+    // goal column. This UPDATE is a no-op when no fitness row exists.
+    await tx
+      .update(fitnessProfiles)
+      .set({
+        profile: sql`JSON_SET(${fitnessProfiles.profile}, '$.units', ${input.units})`,
+        updatedAt,
+      })
+      .where(eq(fitnessProfiles.userId, userId));
+  });
 
   const saved = await getProfileByUserId(userId);
   if (!saved) {

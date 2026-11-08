@@ -22,6 +22,10 @@ Backend-connected email/password registration, verification/resend, login/logout
 
 The eight auth tables were added to the existing cloud database. **Google OAuth and transactional email credentials were not provided, so live Google and new email registration/verification/recovery remain unavailable.** The app reports this honestly rather than using simulated emails or login. Configure protected provider values from `.env.example`, then perform live provider and device checks. Read `docs/AUTH_BACKEND.md` for security controls, configuration, exact boundaries and test results.
 
+## Fitness onboarding
+
+The existing app now includes five-step, authenticated fitness onboarding, a saved/editable fitness profile, and approximate calorie/macronutrient targets. Home, Nutrition and Workouts display guidance derived from saved goals, diet/allergies and equipment. Blank target weights remain optional; canonical cm/kg storage supports metric/imperial editing. Estimates require adult clinical-eligibility acknowledgment and are not medical prescriptions. See `docs/ONBOARDING_REPORT.md` for behavior, safety boundaries and test results.
+
 ## Run inside the Manus project
 
 The Dashboard Preview is connected to this project's Expo/Metro runtime. Managed environment values are supplied by Manus. Do not paste credentials into source files or chat.

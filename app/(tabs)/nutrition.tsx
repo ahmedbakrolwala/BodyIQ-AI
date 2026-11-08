@@ -1,3 +1,4 @@
+import { FitnessPersonalization } from "@/components/bodyiq/fitness-personalization";
 import { useMemo, useState } from "react";
 import {
   Modal,
@@ -60,6 +61,7 @@ export default function NutritionScreen() {
   return (
     <Screen>
       <Header title="Fuel with intention." eyebrow="NUTRITION" />
+      <FitnessPersonalization section="nutrition" />
       <Body style={{ marginBottom: 20 }}>
         Good food. Better energy. A healthier relationship with your plate.
       </Body>

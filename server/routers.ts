@@ -7,6 +7,7 @@ import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { isDatabaseReachable } from "./db";
+import { fitnessRouter } from "./routers/fitness";
 import { profileRouter } from "./routers/profile";
 
 export const appRouter = router({
@@ -31,6 +32,7 @@ export const appRouter = router({
     }),
   }),
   profile: profileRouter,
+  fitness: fitnessRouter,
   foundation: router({
     status: publicProcedure.query(async () => ({
       service: "BodyIQ AI",

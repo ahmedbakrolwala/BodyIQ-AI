@@ -1,3 +1,4 @@
+import { FitnessPersonalization } from "@/components/bodyiq/fitness-personalization";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -104,6 +105,7 @@ export default function ProfileScreen() {
   }
   return (
     <Screen preview={false}>
+      <FitnessPersonalization />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
@@ -338,8 +340,10 @@ export default function ProfileScreen() {
         <View style={f.privacy}>
           <Icon name="shield" size={14} />
           <Body style={{ fontSize: 10, flex: 1 }}>
-            Only your basic profile is stored in Phase 1. No health
-            measurements, meal logs, or AI conversations are collected yet.
+            Your account profile and fitness onboarding answers you save are
+            stored privately in BodyIQ Cloud. Design-preview metrics are not
+            your records; camera images and AI conversations are not collected
+            by these previews.
           </Body>
         </View>
       </KeyboardAvoidingView>
