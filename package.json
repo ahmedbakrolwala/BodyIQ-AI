@@ -1,5 +1,5 @@
 {
-  "name": "app-template",
+  "name": "bodyiq-ai",
   "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
@@ -36,6 +36,7 @@
     "expo-audio": "~57.0.5",
     "expo-build-properties": "~57.0.21",
     "expo-constants": "~57.0.19",
+    "expo-crypto": "~57.0.4",
     "expo-font": "~57.0.4",
     "expo-haptics": "~57.0.3",
     "expo-image": "~57.0.5",
@@ -88,11 +89,5 @@
     "typescript": "~6.0.3",
     "vitest": "^2.1.9"
   },
-  "packageManager": "pnpm@9.12.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "unrs-resolver"
-    ]
-  }
+  "packageManager": "pnpm@9.12.0"
 }

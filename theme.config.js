@@ -1,14 +1,13 @@
-/** @type {const} */
+/** Shared NativeWind theme; BodyIQ AI is intentionally dark on every system theme. */
 const themeColors = {
-  primary: { light: '#0a7ea4', dark: '#0a7ea4' },
-  background: { light: '#ffffff', dark: '#151718' },
-  surface: { light: '#f5f5f5', dark: '#1e2022' },
-  foreground: { light: '#11181C', dark: '#ECEDEE' },
-  muted: { light: '#687076', dark: '#9BA1A6' },
-  border: { light: '#E5E7EB', dark: '#334155' },
-  success: { light: '#22C55E', dark: '#4ADE80' },
-  warning: { light: '#F59E0B', dark: '#FBBF24' },
-  error: { light: '#EF4444', dark: '#F87171' },
+  primary: { light: "#C3FF5C", dark: "#C3FF5C" },
+  background: { light: "#090B0A", dark: "#090B0A" },
+  surface: { light: "#141715", dark: "#141715" },
+  foreground: { light: "#F5F7F4", dark: "#F5F7F4" },
+  muted: { light: "#939D95", dark: "#939D95" },
+  border: { light: "#282E29", dark: "#282E29" },
+  success: { light: "#C3FF5C", dark: "#C3FF5C" },
+  warning: { light: "#E9AA76", dark: "#E9AA76" },
+  error: { light: "#FF9E9E", dark: "#FF9E9E" },
 };
-
 module.exports = { themeColors };

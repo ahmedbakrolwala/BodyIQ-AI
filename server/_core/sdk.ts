@@ -2,6 +2,7 @@ import { AXIOS_TIMEOUT_MS, ONE_YEAR_MS } from "../../shared/const.js";
 import { ForbiddenError } from "../../shared/_core/errors.js";
 import axios, { type AxiosInstance } from "axios";
 import type { Request } from "express";
+import { parse as parseCookieHeader } from "cookie";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
@@ -144,7 +145,7 @@ class SDKServer {
       {
         openId,
         appId: ENV.appId,
-        name: options.name || "",
+        name: options.name ?? "",
       },
       options,
     );
@@ -184,8 +185,21 @@ class SDKServer {
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
 
-      if (!isNonEmptyString(openId) || !isNonEmptyString(appId) || !isNonEmptyString(name)) {
+      if (
+        !isNonEmptyString(openId) ||
+        !isNonEmptyString(appId) ||
+        appId !== ENV.appId ||
+        typeof payload.exp !== "number" ||
+        payload.exp <= Math.floor(Date.now() / 1000)
+      ) {
         console.warn("[Auth] Session payload missing required fields");
+        return null;
+      }
+
+      // A blank display name is a valid Manus identity value. jose validates
+      // exp for us, while this explicit check keeps the app binding local.
+      if (typeof name !== "string") {
+        console.warn("[Auth] Session payload has invalid name");
         return null;
       }
 
@@ -230,7 +244,12 @@ class SDKServer {
       token = authHeader.slice("Bearer ".length).trim();
     }
 
-    const sessionCookie = token || currentSessionCookie(req);
+    // Preview injects the fixed webdev_app_session cookie. The starter's
+    // dynamic cookie remains accepted for existing deployments.
+    const previewCookie = req.headers.cookie
+      ? parseCookieHeader(req.headers.cookie)["webdev_app_session"]
+      : undefined;
+    const sessionCookie = token || currentSessionCookie(req) || previewCookie;
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {

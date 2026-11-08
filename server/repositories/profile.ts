@@ -1,0 +1,60 @@
+import { eq } from "drizzle-orm";
+import type { UserProfile } from "../../drizzle/schema";
+import { userProfiles } from "../../drizzle/schema";
+import type { ProfileSaveInput } from "../../shared/profile";
+import { getDb } from "../db";
+
+async function requireDb() {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured or reachable");
+  }
+  return db;
+}
+
+export async function getProfileByUserId(
+  userId: number,
+): Promise<UserProfile | null> {
+  const db = await requireDb();
+  const rows = await db
+    .select()
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertProfile(
+  userId: number,
+  input: ProfileSaveInput,
+): Promise<UserProfile> {
+  const db = await requireDb();
+  const values = {
+    userId,
+    displayName: input.displayName,
+    goal: input.goal,
+    country: input.country,
+    units: input.units,
+  };
+
+  await db
+    .insert(userProfiles)
+    .values(values)
+    .onDuplicateKeyUpdate({
+      set: {
+        displayName: input.displayName,
+        goal: input.goal,
+        country: input.country,
+        units: input.units,
+        updatedAt: new Date(),
+      },
+    });
+
+  const saved = await getProfileByUserId(userId);
+  if (!saved) {
+    throw new Error(
+      "Profile upsert completed but the profile could not be read",
+    );
+  }
+  return saved;
+}

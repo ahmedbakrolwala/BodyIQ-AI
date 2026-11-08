@@ -1,243 +1,237 @@
-import { ThemedView } from "@/components/themed-view";
 import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
+import { NATIVE_OAUTH_VERIFIER_KEY } from "@/constants/oauth";
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const BLACK = "#090B0A";
+const GREEN = "#C3FF5C";
+
+type CallbackStatus = "processing" | "success" | "error";
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 export default function OAuthCallback() {
   const router = useRouter();
   const params = useLocalSearchParams<{
-    code?: string;
-    state?: string;
-    error?: string;
-    sessionToken?: string;
-    user?: string;
+    code?: string | string[];
+    state?: string | string[];
+    error?: string | string[];
   }>();
-  const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState<CallbackStatus>("processing");
+  const [errorMessage, setErrorMessage] = useState(
+    "We couldn't complete sign in.",
+  );
 
   useEffect(() => {
-    const handleCallback = async () => {
-      console.log("[OAuth] Callback handler triggered");
+    let active = true;
+
+    const complete = async () => {
       try {
-        // Check for sessionToken in params first (web OAuth callback from server redirect)
-        if (params.sessionToken) {
-          console.log("[OAuth] Session token found in params (web callback)");
-          await Auth.setSessionToken(params.sessionToken);
+        const error = firstParam(params.error);
+        if (error) throw new Error(error);
 
-          // Decode and store user info if available
-          if (params.user) {
-            try {
-              // Use atob for base64 decoding (works in both web and React Native)
-              const userJson =
-                typeof atob !== "undefined"
-                  ? atob(params.user)
-                  : Buffer.from(params.user, "base64").toString("utf-8");
-              const userData = JSON.parse(userJson);
-              const userInfo: Auth.User = {
-                id: userData.id,
-                openId: userData.openId,
-                name: userData.name,
-                email: userData.email,
-                loginMethod: userData.loginMethod,
-                lastSignedIn: new Date(userData.lastSignedIn || Date.now()),
-              };
-              await Auth.setUserInfo(userInfo);
-              console.log("[OAuth] User info stored");
-            } catch {
-              console.error("[OAuth] Failed to parse user data");
+        if (Platform.OS === "web") {
+          const user = await Api.getMe();
+          if (!user) throw new Error("Your login session was not established.");
+        } else {
+          let code = firstParam(params.code);
+          let state = firstParam(params.state);
+          if (!code || !state) {
+            const initialUrl = await Linking.getInitialURL();
+            if (initialUrl) {
+              const parsed = new URL(initialUrl);
+              code = parsed.searchParams.get("code") ?? undefined;
+              state = parsed.searchParams.get("state") ?? undefined;
             }
           }
+          if (!code || !state)
+            throw new Error("The login callback is missing code or state.");
 
-          setStatus("success");
-          console.log("[OAuth] Web authentication successful, redirecting to home...");
-          setTimeout(() => {
-            router.replace("/(tabs)");
-          }, 1000);
-          return;
-        }
+          const verifier = await SecureStore.getItemAsync(
+            NATIVE_OAUTH_VERIFIER_KEY,
+          );
+          if (!verifier)
+            throw new Error(
+              "This login attempt has expired. Please try again.",
+            );
 
-        // Get URL from params or Linking
-        let url: string | null = null;
-
-        // Try to get from local search params first (works with expo-router)
-        if (params.code || params.state || params.error) {
-          console.log("[OAuth] Found params in route params");
-          // Extract from params
-          const urlParams = new URLSearchParams();
-          if (params.code) urlParams.set("code", params.code);
-          if (params.state) urlParams.set("state", params.state);
-          if (params.error) urlParams.set("error", params.error);
-          url = `?${urlParams.toString()}`;
-          console.log("[OAuth] Constructed callback URL from params");
-        } else {
-          console.log("[OAuth] No params found, checking Linking.getInitialURL()...");
-          // Fallback: try to get from Linking
-          const initialUrl = await Linking.getInitialURL();
-          if (initialUrl) {
-            console.log("[OAuth] Initial callback URL present");
-            url = initialUrl;
-          } else {
-            console.log("[OAuth] Initial callback URL missing");
-          }
-        }
-
-        // Check for error
-        const error =
-          params.error || (url ? new URL(url, "http://dummy").searchParams.get("error") : null);
-        if (error) {
-          console.error("[OAuth] Error parameter found");
-          setStatus("error");
-          setErrorMessage(error || "OAuth error occurred");
-          return;
-        }
-
-        // Check for code and state
-        let code: string | null = null;
-        let state: string | null = null;
-        let sessionToken: string | null = null;
-
-        // Try to get from params first
-        if (params.code && params.state) {
-          console.log("[OAuth] Using code and state from route params");
-          code = params.code;
-          state = params.state;
-        } else if (url) {
-          console.log("[OAuth] Parsing code and state from callback URL");
-          // Parse from URL
           try {
-            const urlObj = new URL(url);
-            code = urlObj.searchParams.get("code");
-            state = urlObj.searchParams.get("state");
-            sessionToken = urlObj.searchParams.get("sessionToken");
-            console.log("[OAuth] Parsed callback URL");
-          } catch {
-            console.log("[OAuth] Failed to parse as full URL, trying regex");
-            // Try parsing as relative URL with query params
-            const match = url.match(/[?&](code|state|sessionToken)=([^&]+)/g);
-            if (match) {
-              match.forEach((param) => {
-                const [key, value] = param.substring(1).split("=");
-                if (key === "code") code = decodeURIComponent(value);
-                if (key === "state") state = decodeURIComponent(value);
-                if (key === "sessionToken") sessionToken = decodeURIComponent(value);
-              });
-              console.log("[OAuth] Parsed callback query");
-            }
+            const result = await Api.exchangeOAuthCode(code, state, verifier);
+            await Auth.setSessionToken(result.sessionToken);
+            const user = await Api.getMe();
+            if (!user)
+              throw new Error(
+                "The returned login session could not be validated.",
+              );
+            await Auth.setUserInfo({
+              id: user.id,
+              openId: user.openId,
+              name: user.name,
+              email: user.email,
+              loginMethod: user.loginMethod,
+              lastSignedIn: new Date(user.lastSignedIn),
+            });
+          } finally {
+            await SecureStore.deleteItemAsync(NATIVE_OAUTH_VERIFIER_KEY);
           }
         }
 
-        // If we have sessionToken directly from URL, use it
-        if (sessionToken) {
-          console.log("[OAuth] Session token found in URL, storing...");
-          await Auth.setSessionToken(sessionToken);
-          console.log("[OAuth] Session token stored successfully");
-          // User info is already in the OAuth callback response
-          // No need to fetch from API
-          setStatus("success");
-          console.log("[OAuth] Redirecting to home...");
-          setTimeout(() => {
-            router.replace("/(tabs)");
-          }, 1000);
-          return;
+        try {
+          await AsyncStorage.setItem("bodyiq:entered", "true");
+        } catch {
+          /* Optional local preference. */
         }
-
-        // Otherwise, exchange code for session token
-        if (!code || !state) {
-          console.error("[OAuth] Missing code or state parameter");
-          setStatus("error");
-          setErrorMessage("Missing code or state parameter");
-          return;
-        }
-
-        // Exchange code for session token
-        console.log("[OAuth] Exchanging code for session token...");
-        const result = await Api.exchangeOAuthCode(code, state);
-        console.log("[OAuth] Exchange completed");
-
-        if (result.sessionToken) {
-          console.log("[OAuth] Session token received, storing...");
-          // Store session token
-          await Auth.setSessionToken(result.sessionToken);
-          console.log("[OAuth] Session token stored successfully");
-
-          // Store user info if available
-          if (result.user) {
-            console.log("[OAuth] User data received");
-            const userInfo: Auth.User = {
-              id: result.user.id,
-              openId: result.user.openId,
-              name: result.user.name,
-              email: result.user.email,
-              loginMethod: result.user.loginMethod,
-              lastSignedIn: new Date(result.user.lastSignedIn || Date.now()),
-            };
-            await Auth.setUserInfo(userInfo);
-            console.log("[OAuth] User info stored");
-          } else {
-            console.log("[OAuth] No user data in result");
-          }
-
+        if (active) {
           setStatus("success");
-          console.log("[OAuth] Authentication successful, redirecting to home...");
-
-          // Redirect to home after a short delay
           setTimeout(() => {
-            console.log("[OAuth] Executing redirect...");
-            router.replace("/(tabs)");
-          }, 1000);
-        } else {
-          console.error("[OAuth] No session token in result");
-          setStatus("error");
-          setErrorMessage("No session token received");
+            if (active) router.replace("/(tabs)");
+          }, 700);
         }
       } catch (error) {
-        console.error("[OAuth] Callback error");
+        if (!active) return;
         setStatus("error");
         setErrorMessage(
-          error instanceof Error ? error.message : "Failed to complete authentication",
+          error instanceof Error
+            ? error.message
+            : "We couldn't complete sign in.",
         );
       }
     };
 
-    handleCallback();
-  }, [params.code, params.state, params.error, params.sessionToken, params.user, router]);
+    void complete();
+    return () => {
+      active = false;
+    };
+  }, [params.code, params.state, params.error, router]);
+
+  const goBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)");
+  };
 
   return (
-    <SafeAreaView className="flex-1" edges={["top", "bottom", "left", "right"]}>
-      <ThemedView className="flex-1 items-center justify-center gap-4 p-5">
-        {status === "processing" && (
-          <>
-            <ActivityIndicator size="large" />
-            <Text className="mt-4 text-base leading-6 text-center text-foreground">
-              Completing authentication...
-            </Text>
-          </>
-        )}
-        {status === "success" && (
-          <>
-            <Text className="text-base leading-6 text-center text-foreground">
-              Authentication successful!
-            </Text>
-            <Text className="text-base leading-6 text-center text-foreground">
-              Redirecting...
-            </Text>
-          </>
-        )}
-        {status === "error" && (
-          <>
-            <Text className="mb-2 text-xl font-bold leading-7 text-error">
-              Authentication failed
-            </Text>
-            <Text className="text-base leading-6 text-center text-foreground">
-              {errorMessage}
-            </Text>
-          </>
-        )}
-      </ThemedView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BLACK }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: BLACK,
+          padding: 24,
+          justifyContent: "center",
+        }}
+      >
+        <View style={{ alignItems: "center", gap: 18 }}>
+          {status === "processing" && (
+            <>
+              <ActivityIndicator color={GREEN} size="large" />
+              <Text
+                style={{ color: "white", fontSize: 17, textAlign: "center" }}
+              >
+                Completing your secure sign in…
+              </Text>
+            </>
+          )}
+          {status === "success" && (
+            <>
+              <Text
+                style={{
+                  color: GREEN,
+                  fontSize: 24,
+                  fontWeight: "700",
+                  textAlign: "center",
+                }}
+              >
+                You’re signed in
+              </Text>
+              <Text
+                style={{ color: "white", fontSize: 16, textAlign: "center" }}
+              >
+                Taking you back to BodyIQ AI…
+              </Text>
+            </>
+          )}
+          {status === "error" && (
+            <>
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 24,
+                  fontWeight: "700",
+                  textAlign: "center",
+                }}
+              >
+                Sign in didn’t finish
+              </Text>
+              <Text
+                style={{
+                  color: "#C9D0CB",
+                  fontSize: 16,
+                  lineHeight: 23,
+                  textAlign: "center",
+                }}
+              >
+                {errorMessage}
+              </Text>
+              <View style={{ width: "100%", gap: 12, marginTop: 8 }}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.replace("/(tabs)")}
+                  style={{
+                    backgroundColor: GREEN,
+                    borderRadius: 12,
+                    padding: 15,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: BLACK,
+                      fontSize: 16,
+                      fontWeight: "700",
+                      textAlign: "center",
+                    }}
+                  >
+                    Back to BodyIQ AI
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={goBack}
+                  style={{
+                    borderColor: GREEN,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    padding: 14,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: GREEN,
+                      fontSize: 16,
+                      fontWeight: "600",
+                      textAlign: "center",
+                    }}
+                  >
+                    Go back
+                  </Text>
+                </Pressable>
+              </View>
+            </>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
