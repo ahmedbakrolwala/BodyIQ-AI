@@ -18,6 +18,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { DesignPreviewProvider } from "@/lib/preview-context";
+import { AuthProvider } from "@/hooks/use-auth";
 import {
   initManusRuntime,
   subscribeSafeAreaInsets,
@@ -89,29 +90,37 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <DesignPreviewProvider>
-            {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
-            {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
-            {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: "#090B0A" },
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="welcome" />
-              <Stack.Screen name="login" />
-              <Stack.Screen name="register" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="scanner" />
-              <Stack.Screen name="profile" />
-              <Stack.Screen name="settings" />
-              <Stack.Screen name="support" />
-              <Stack.Screen name="oauth/callback" />
-            </Stack>
-            <StatusBar style="light" />
-          </DesignPreviewProvider>
+          <AuthProvider>
+            <DesignPreviewProvider>
+              {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
+              {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
+              {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: "#090B0A" },
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="welcome" />
+                <Stack.Screen name="login" />
+                <Stack.Screen name="register" />
+                <Stack.Screen name="verify-email" />
+                <Stack.Screen name="forgot-password" />
+                <Stack.Screen name="reset-password" />
+                <Stack.Screen name="account-security" />
+                <Stack.Screen name="delete-account" />
+                <Stack.Screen name="auth/google-callback" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="scanner" />
+                <Stack.Screen name="profile" />
+                <Stack.Screen name="settings" />
+                <Stack.Screen name="support" />
+                <Stack.Screen name="oauth/callback" />
+              </Stack>
+              <StatusBar style="light" />
+            </DesignPreviewProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>

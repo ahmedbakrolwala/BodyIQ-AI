@@ -44,6 +44,15 @@ export default function ProfileScreen() {
   const [draftGoal, setGoal] = useState<Goal | null>(null);
   const [draftCountry, setCountry] = useState<string | null>(null);
   const [draftUnits, setUnits] = useState<"metric" | "imperial" | null>(null);
+  const [logoutBusy, setLogoutBusy] = useState(false);
+  const [formUserId, setFormUserId] = useState(auth.user?.id);
+  if (formUserId !== auth.user?.id) {
+    setFormUserId(auth.user?.id);
+    setName(null);
+    setGoal(null);
+    setCountry(null);
+    setUnits(null);
+  }
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const name =
@@ -79,9 +88,19 @@ export default function ProfileScreen() {
     }
   }
   async function logout() {
-    await auth.logout();
-    utils.profile.get.reset();
-    router.replace("/welcome");
+    setLogoutBusy(true);
+    setError("");
+    try {
+      await auth.logout();
+      utils.profile.get.reset();
+      router.replace("/welcome");
+    } catch {
+      setError(
+        "Sign-out could not be completed. Check your connection and try again. Your server session has not been falsely reported as revoked.",
+      );
+    } finally {
+      setLogoutBusy(false);
+    }
   }
   return (
     <Screen preview={false}>
@@ -174,9 +193,8 @@ export default function ProfileScreen() {
             </View>
             <Text style={f.signTitle}>Make it yours.</Text>
             <Body style={{ marginBottom: 24 }}>
-              Sign in securely with your Manus account to save your name, goal,
-              country, and units. Guest exploration does not save personal data
-              to the cloud.
+              Sign in securely to save your name, goal, country, and units.
+              Guest exploration does not save personal data to the cloud.
             </Body>
             <Button
               title="Sign in securely"
@@ -297,10 +315,12 @@ export default function ProfileScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={logout}
+              disabled={logoutBusy}
+              accessibilityState={{ disabled: logoutBusy }}
               style={f.logout}
             >
               <Text style={{ color: p.muted, fontSize: 12 }}>
-                Sign out of BodyIQ AI
+                {logoutBusy ? "Signing out securely…" : "Sign out of BodyIQ AI"}
               </Text>
             </Pressable>
           </>

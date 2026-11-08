@@ -16,6 +16,12 @@ The existing project now includes polished Welcome, Login, Registration, Home, N
 
 Design Preview shows explicitly labeled, local-only sample data. The banner eye control and Settings switch hide samples and restore empty states. Scanner results and Coach conversations are predefined design demos, not live recognition or AI. Preview preferences are device-local and samples are never seeded into the database. Read `docs/INTERFACE_REPORT.md` for screen and interaction checks, completed refinements and release-stage limits.
 
+## Authentication upgrade
+
+Backend-connected email/password registration, verification/resend, login/logout, forgot/reset, account security and deletion are implemented. Passwords use salted scrypt; persistent JWT/SID sessions are revocable. Google OpenID Connect uses PKCE, nonce validation, encrypted/browser-bound state and verifier-bound native completion. The existing design, fitness navigation, Manus access and real cloud profile editor are preserved.
+
+The eight auth tables were added to the existing cloud database. **Google OAuth and transactional email credentials were not provided, so live Google and new email registration/verification/recovery remain unavailable.** The app reports this honestly rather than using simulated emails or login. Configure protected provider values from `.env.example`, then perform live provider and device checks. Read `docs/AUTH_BACKEND.md` for security controls, configuration, exact boundaries and test results.
+
 ## Run inside the Manus project
 
 The Dashboard Preview is connected to this project's Expo/Metro runtime. Managed environment values are supplied by Manus. Do not paste credentials into source files or chat.

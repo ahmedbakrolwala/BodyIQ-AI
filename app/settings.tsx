@@ -48,6 +48,21 @@ export default function SettingsScreen() {
           onPress={() => router.push("/profile")}
         />
       </Card>
+      <Section title="Account security" />
+      <Card style={{ paddingVertical: 3 }}>
+        <SettingRow
+          icon="shield"
+          title="Account access & sessions"
+          subtitle="Sign-in methods, password recovery and sign-out"
+          onPress={() => router.push("/account-security")}
+        />
+        <SettingRow
+          icon="trash-2"
+          title="Delete account"
+          subtitle="Permanent deletion requires confirmation"
+          onPress={() => router.push("/delete-account")}
+        />
+      </Card>
       <Section title="Support & information" />
       <Card style={{ paddingVertical: 3 }}>
         <SettingRow

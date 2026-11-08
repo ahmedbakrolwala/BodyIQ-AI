@@ -9,13 +9,19 @@ export type User = {
   email: string | null;
   loginMethod: string | null;
   lastSignedIn: Date;
+  authProvider?: "email" | "google" | "manus";
+  emailVerified?: boolean;
+  canDeleteWithPassword?: boolean;
+  requiresReauthentication?: boolean;
 };
 
 export async function getSessionToken(): Promise<string | null> {
   try {
     // Web platform uses cookie-based auth, no manual token management needed
     if (Platform.OS === "web") {
-      console.log("[Auth] Web platform uses cookie-based auth, skipping token retrieval");
+      console.log(
+        "[Auth] Web platform uses cookie-based auth, skipping token retrieval",
+      );
       return null;
     }
 
@@ -33,7 +39,9 @@ export async function setSessionToken(token: string): Promise<void> {
   try {
     // Web platform uses cookie-based auth, no manual token management needed
     if (Platform.OS === "web") {
-      console.log("[Auth] Web platform uses cookie-based auth, skipping token storage");
+      console.log(
+        "[Auth] Web platform uses cookie-based auth, skipping token storage",
+      );
       return;
     }
 
@@ -51,7 +59,9 @@ export async function removeSessionToken(): Promise<void> {
   try {
     // Web platform uses cookie-based auth, logout is handled by server clearing cookie
     if (Platform.OS === "web") {
-      console.log("[Auth] Web platform uses cookie-based auth, skipping token removal");
+      console.log(
+        "[Auth] Web platform uses cookie-based auth, skipping token removal",
+      );
       return;
     }
 
@@ -71,7 +81,9 @@ export async function getUserInfo(): Promise<User | null> {
     let info: string | null = null;
     if (Platform.OS === "web") {
       // Use localStorage for web
-      info = window.localStorage.getItem(USER_INFO_KEY);
+      // Browser profile data stays in authenticated memory, not persistent storage.
+      window.localStorage.removeItem(USER_INFO_KEY);
+      return null;
     } else {
       // Use SecureStore for native
       info = await SecureStore.getItemAsync(USER_INFO_KEY);
@@ -96,7 +108,7 @@ export async function setUserInfo(user: User): Promise<void> {
 
     if (Platform.OS === "web") {
       // Use localStorage for web
-      window.localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+      window.localStorage.removeItem(USER_INFO_KEY);
       console.log("[Auth] User info stored in localStorage successfully");
       return;
     }

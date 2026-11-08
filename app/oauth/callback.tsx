@@ -1,3 +1,4 @@
+import { useAuth } from "@/hooks/use-auth";
 import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
 import { NATIVE_OAUTH_VERIFIER_KEY } from "@/constants/oauth";
@@ -26,6 +27,7 @@ function firstParam(value: string | string[] | undefined): string | undefined {
 
 export default function OAuthCallback() {
   const router = useRouter();
+  const { refresh } = useAuth();
   const params = useLocalSearchParams<{
     code?: string | string[];
     state?: string | string[];
@@ -90,6 +92,7 @@ export default function OAuthCallback() {
           }
         }
 
+        await refresh();
         try {
           await AsyncStorage.setItem("bodyiq:entered", "true");
         } catch {
@@ -116,7 +119,7 @@ export default function OAuthCallback() {
     return () => {
       active = false;
     };
-  }, [params.code, params.state, params.error, router]);
+  }, [params.code, params.state, params.error, router, refresh]);
 
   const goBack = () => {
     if (router.canGoBack()) router.back();

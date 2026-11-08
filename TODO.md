@@ -31,3 +31,17 @@ Managed schema migration applied; cloud reachability verified; TypeScript and ba
 ## Interface verification evidence
 
 Every requested screen rendered in mobile Preview. Browser navigation, scanner/meal/workout demos, chart filters, Coach prompt and typed-message flows, settings switches, support links and sample-to-empty-state transitions passed. TypeScript, interface lint, backend compilation and 44 tests pass; one existing logout test remains skipped. Web/Android/iOS JavaScript exports pass. No real health or test user records were written; physical-device and signed-release checks remain unverified. See docs/INTERFACE_REPORT.md for details.
+
+# Complete authentication upgrade
+
+- [x] Add backend-connected Google sign-in and email/password registration while preserving the existing design, navigation, Manus sign-in and real private profile data.
+- [x] Implement email verification, login/logout, forgot password, single-use password reset and persistent cross-platform sessions, with proper errors and loading indicators.
+- [x] Never store plaintext passwords. Use salted, memory-hard password hashing, secure cookies/native storage, persisted revocable sessions, rate limits and hashed short-lived action tokens.
+- [x] Store profiles securely and enforce authenticated ownership on every private operation. Add confirmed account deletion with recent reauthentication and cascading deletion/revocation.
+- [x] Test registration, verification, login, logout, password reset, token replay/expiry, ownership and account deletion using isolated test dependencies; do not bypass production auth or write fake health data.
+- [x] Validate TypeScript, maintained UI/navigation, database migrations, runtime readiness and platform bundles. Report live provider/device verification limits honestly.
+- [ ] Configure Google OAuth and verification/reset email delivery and complete live end-to-end provider tests. BLOCKED: user cancelled the protected credential form; do not reopen it without a new user request. Google client ID/secret and Resend sender/key are not configured.
+
+## Authentication verification evidence
+
+67 tests pass across 11 suites, including real scrypt and signed-JWT HTTP lifecycle tests. TypeScript, targeted lint, backend build and final web/Android/iOS JavaScript exports pass. Eight additive cloud auth tables are ready; API/Metro return HTTP 200. Provider-dependent routes return clear 503 configuration errors. The read-only review findings were corrected with atomic reset/deletion, owned revocable SID transport, strict auth body limits, persistent throttles, legacy callback protection and logout consistency. Live Google/email delivery, physical-phone OAuth and signed releases remain unverified until provider setup. See docs/AUTH_BACKEND.md.

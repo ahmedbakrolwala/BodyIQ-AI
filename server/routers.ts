@@ -1,4 +1,9 @@
-import { getSessionCookieName, getSessionCookieOptions } from "./_core/cookies";
+import {
+  APPLICATION_SESSION_COOKIE,
+  getSessionCookieName,
+  getSessionCookieOptions,
+} from "./_core/cookies";
+import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { isDatabaseReachable } from "./db";
@@ -9,8 +14,13 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      await sdk.revokeRequestSession(ctx.req);
       const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(APPLICATION_SESSION_COOKIE, {
+        ...cookieOptions,
+        maxAge: -1,
+      });
       ctx.res.clearCookie(getSessionCookieName(ctx.req), {
         ...cookieOptions,
         maxAge: -1,

@@ -6,12 +6,17 @@ import {
 } from "../../shared/const.js";
 
 function isSecureRequest(req: Request) {
+  const publicApi =
+    process.env.AUTH_PUBLIC_API_URL ?? process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (publicApi?.startsWith("https://")) return true;
   if (req.protocol === "https") return true;
 
   const forwardedProto = req.headers["x-forwarded-proto"];
   if (!forwardedProto) return false;
 
-  const protoList = Array.isArray(forwardedProto) ? forwardedProto : forwardedProto.split(",");
+  const protoList = Array.isArray(forwardedProto)
+    ? forwardedProto
+    : forwardedProto.split(",");
 
   return protoList.some((proto) => proto.trim().toLowerCase() === "https");
 }
@@ -75,5 +80,13 @@ export function clearLegacySessionCookie(): RequestHandler {
 
 export function currentSessionCookie(req: Request): string | undefined {
   if (!req.headers.cookie) return undefined;
-  return parseCookieHeader(req.headers.cookie)[getSessionCookieName(req)];
+  const cookies = parseCookieHeader(req.headers.cookie);
+  return cookies.webdev_app_session ?? cookies[getSessionCookieName(req)];
+}
+
+export const APPLICATION_SESSION_COOKIE = "webdev_app_session";
+
+export function applicationSessionCookie(req: Request): string | undefined {
+  if (!req.headers.cookie) return undefined;
+  return parseCookieHeader(req.headers.cookie)[APPLICATION_SESSION_COOKIE];
 }

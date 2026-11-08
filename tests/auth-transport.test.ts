@@ -11,26 +11,22 @@ describe("auth transport distinction", () => {
   it("returns signed-out state only for 401", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ error: "Not authenticated" }), {
-            status: 401,
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "Not authenticated" }), {
+          status: 401,
+        }),
+      ),
     );
     expect(await getMe()).toBeNull();
   });
   it("propagates server errors instead of a fake logout", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ error: "Service unavailable" }), {
-            status: 503,
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "Service unavailable" }), {
+          status: 503,
+        }),
+      ),
     );
     await expect(getMe()).rejects.toBeInstanceOf(ApiError);
   });

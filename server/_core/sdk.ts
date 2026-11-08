@@ -8,6 +8,8 @@ import type { User } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
 import { currentSessionCookie } from "./cookies";
+import { hashToken } from "../auth/service";
+import { authStore } from "../auth/store";
 import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
@@ -23,6 +25,11 @@ export type SessionPayload = {
   openId: string;
   appId: string;
   name: string;
+};
+
+export type ManagedSessionPayload = SessionPayload & {
+  sid: string;
+  userId: number;
 };
 
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
@@ -44,7 +51,10 @@ class OAuthService {
     return redirectUri;
   }
 
-  async getTokenByCode(code: string, state: string): Promise<ExchangeTokenResponse> {
+  async getTokenByCode(
+    code: string,
+    state: string,
+  ): Promise<ExchangeTokenResponse> {
     const payload: ExchangeTokenRequest = {
       clientId: ENV.appId,
       grantType: "authorization_code",
@@ -52,15 +62,23 @@ class OAuthService {
       redirectUri: this.decodeState(state),
     };
 
-    const { data } = await this.client.post<ExchangeTokenResponse>(EXCHANGE_TOKEN_PATH, payload);
+    const { data } = await this.client.post<ExchangeTokenResponse>(
+      EXCHANGE_TOKEN_PATH,
+      payload,
+    );
 
     return data;
   }
 
-  async getUserInfoByToken(token: ExchangeTokenResponse): Promise<GetUserInfoResponse> {
-    const { data } = await this.client.post<GetUserInfoResponse>(GET_USER_INFO_PATH, {
-      accessToken: token.accessToken,
-    });
+  async getUserInfoByToken(
+    token: ExchangeTokenResponse,
+  ): Promise<GetUserInfoResponse> {
+    const { data } = await this.client.post<GetUserInfoResponse>(
+      GET_USER_INFO_PATH,
+      {
+        accessToken: token.accessToken,
+      },
+    );
 
     return data;
   }
@@ -87,11 +105,16 @@ class SDKServer {
   ): string | null {
     if (fallback && fallback.length > 0) return fallback;
     if (!Array.isArray(platforms) || platforms.length === 0) return null;
-    const set = new Set<string>(platforms.filter((p): p is string => typeof p === "string"));
+    const set = new Set<string>(
+      platforms.filter((p): p is string => typeof p === "string"),
+    );
     if (set.has("REGISTERED_PLATFORM_EMAIL")) return "email";
     if (set.has("REGISTERED_PLATFORM_GOOGLE")) return "google";
     if (set.has("REGISTERED_PLATFORM_APPLE")) return "apple";
-    if (set.has("REGISTERED_PLATFORM_MICROSOFT") || set.has("REGISTERED_PLATFORM_AZURE"))
+    if (
+      set.has("REGISTERED_PLATFORM_MICROSOFT") ||
+      set.has("REGISTERED_PLATFORM_AZURE")
+    )
       return "microsoft";
     if (set.has("REGISTERED_PLATFORM_GITHUB")) return "github";
     const first = Array.from(set)[0];
@@ -103,7 +126,10 @@ class SDKServer {
    * @example
    * const tokenResponse = await sdk.exchangeCodeForToken(code, state);
    */
-  async exchangeCodeForToken(code: string, state: string): Promise<ExchangeTokenResponse> {
+  async exchangeCodeForToken(
+    code: string,
+    state: string,
+  ): Promise<ExchangeTokenResponse> {
     return this.oauthService.getTokenByCode(code, state);
   }
 
@@ -152,7 +178,7 @@ class SDKServer {
   }
 
   async signSession(
-    payload: SessionPayload,
+    payload: SessionPayload | ManagedSessionPayload,
     options: { expiresInMs?: number } = {},
   ): Promise<string> {
     const issuedAt = Date.now();
@@ -164,15 +190,34 @@ class SDKServer {
       openId: payload.openId,
       appId: payload.appId,
       name: payload.name,
+      ...("sid" in payload ? { sid: payload.sid, userId: payload.userId } : {}),
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setExpirationTime(expirationSeconds)
       .sign(secretKey);
   }
 
+  async createManagedSessionToken(
+    userId: number,
+    openId: string,
+    sid: string,
+    options: { expiresInMs?: number; name?: string } = {},
+  ): Promise<string> {
+    return this.signSession(
+      { openId, appId: ENV.appId, name: options.name ?? "", sid, userId },
+      { expiresInMs: options.expiresInMs ?? 30 * 24 * 60 * 60 * 1000 },
+    );
+  }
+
   async verifySession(
     cookieValue: string | undefined | null,
-  ): Promise<{ openId: string; appId: string; name: string } | null> {
+  ): Promise<{
+    openId: string;
+    appId: string;
+    name: string;
+    sid?: string;
+    userId?: number;
+  } | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
@@ -183,7 +228,10 @@ class SDKServer {
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
-      const { openId, appId, name } = payload as Record<string, unknown>;
+      const { openId, appId, name, sid, userId } = payload as Record<
+        string,
+        unknown
+      >;
 
       if (
         !isNonEmptyString(openId) ||
@@ -203,10 +251,33 @@ class SDKServer {
         return null;
       }
 
+      if (sid !== undefined || userId !== undefined) {
+        if (
+          typeof sid !== "string" ||
+          !/^[A-Za-z0-9_-]{43}$/.test(sid) ||
+          typeof userId !== "number" ||
+          !Number.isInteger(userId) ||
+          userId <= 0
+        )
+          return null;
+        const managed = await authStore.getSession(hashToken(sid));
+        if (
+          !managed ||
+          managed.userId !== userId ||
+          managed.revokedAt ||
+          managed.expiresAt.getTime() <= Date.now()
+        ) {
+          return null;
+        }
+      }
+
       return {
         openId,
         appId,
         name,
+        ...(typeof sid === "string" && typeof userId === "number"
+          ? { sid, userId }
+          : {}),
       };
     } catch {
       console.warn("[Auth] Session verification failed");
@@ -214,7 +285,26 @@ class SDKServer {
     }
   }
 
-  async getUserInfoWithJwt(jwtToken: string): Promise<GetUserInfoWithJwtResponse> {
+  async revokeRequestSession(req: Request): Promise<void> {
+    const header = req.headers.authorization;
+    const cookie = req.headers.cookie
+      ? parseCookieHeader(req.headers.cookie)["webdev_app_session"]
+      : undefined;
+    const token =
+      typeof header === "string" && header.startsWith("Bearer ")
+        ? header.slice(7).trim()
+        : currentSessionCookie(req) || cookie;
+    if (!token) return;
+    const claims = await this.verifySession(token);
+    if (!claims) return;
+    if (claims.sid)
+      await authStore.revokeSession(hashToken(claims.sid), new Date());
+    else await authStore.addRevocation(hashToken(`jwt:${token}`));
+  }
+
+  async getUserInfoWithJwt(
+    jwtToken: string,
+  ): Promise<GetUserInfoWithJwtResponse> {
     const payload: GetUserInfoWithJwtRequest = {
       jwtToken,
       projectId: ENV.appId,
@@ -266,11 +356,19 @@ class SDKServer {
     }
 
     const sessionUserId = session.openId;
+    if (
+      (!session.sid &&
+        (await authStore.hasRevocation(hashToken(sessionUserId)))) ||
+      (await authStore.hasRevocation(hashToken(`jwt:${sessionCookie}`)))
+    ) {
+      throw ForbiddenError("Identity has been deleted");
+    }
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
     // If user not in DB, sync from OAuth server automatically
     if (!user) {
+      if (session.sid) throw ForbiddenError("User not found");
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({
@@ -291,6 +389,8 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
+    if (session.sid && user.id !== session.userId)
+      throw ForbiddenError("Session owner mismatch");
     await db.upsertUser({
       openId: user.openId,
       lastSignedIn: signedInAt,
@@ -308,7 +408,9 @@ export type AuthenticatedUser = User & {
   isCron?: boolean;
 };
 
-function buildCronUser(userInfo: GetUserInfoWithJwtResponse): AuthenticatedUser {
+function buildCronUser(
+  userInfo: GetUserInfoWithJwtResponse,
+): AuthenticatedUser {
   const now = new Date();
   return {
     id: -1,

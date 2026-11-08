@@ -1,4 +1,5 @@
 import { parse as parseCookieHeader } from "cookie";
+import { randomBytes } from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { ONE_YEAR_MS } from "../../shared/const.js";
 import { getUserByOpenId, upsertUser } from "../db";
@@ -16,8 +17,21 @@ import {
   OAUTH_NONCE_COOKIE,
 } from "./oauth-state";
 import { sdk } from "./sdk";
+import { authStore } from "../auth/store";
+import { hashToken } from "../auth/service";
 
 const APPLICATION_SESSION_COOKIE = "webdev_app_session";
+
+async function createPersistedSid(userId: number): Promise<string> {
+  const sid = randomBytes(32).toString("base64url");
+  await authStore.createSession({
+    sidHash: hashToken(sid),
+    userId,
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    reauthenticatedAt: new Date(),
+  });
+  return sid;
+}
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -83,6 +97,8 @@ async function syncUser(userInfo: {
   platform?: string | null;
 }) {
   if (!userInfo.openId) throw new Error("openId missing from user info");
+  if (await authStore.hasRevocation(hashToken(userInfo.openId)))
+    throw new Error("BodyIQ account was deleted");
 
   const lastSignedIn = new Date();
   await upsertUser({
@@ -93,15 +109,8 @@ async function syncUser(userInfo: {
     lastSignedIn,
   });
   const saved = await getUserByOpenId(userInfo.openId);
-  return (
-    saved ?? {
-      openId: userInfo.openId,
-      name: userInfo.name ?? null,
-      email: userInfo.email ?? null,
-      loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-      lastSignedIn,
-    }
-  );
+  if (!saved) throw new Error("OAuth user was not persisted");
+  return saved;
 }
 
 function buildUserResponse(
@@ -140,7 +149,14 @@ async function exchangeNativeCode(req: Request, res: Response) {
   const verifier =
     typeof source.verifier === "string" ? source.verifier : undefined;
 
-  if (!code || !state || !verifier) {
+  if (
+    Object.keys(source).some(
+      (key) => !["code", "state", "verifier"].includes(key),
+    ) ||
+    !code ||
+    !state ||
+    !verifier
+  ) {
     res.status(400).json({ error: "code, state, and verifier are required" });
     return;
   }
@@ -163,10 +179,15 @@ async function exchangeNativeCode(req: Request, res: Response) {
     const tokenResponse = await sdk.exchangeCodeForToken(code, state);
     const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
     const user = await syncUser(userInfo);
-    const sessionToken = await sdk.createSessionToken(userInfo.openId!, {
-      name: userInfo.name ?? "",
-      expiresInMs: ONE_YEAR_MS,
-    });
+    const sessionToken = await sdk.createManagedSessionToken(
+      user.id,
+      user.openId,
+      await createPersistedSid(user.id),
+      {
+        name: userInfo.name ?? "",
+        expiresInMs: ONE_YEAR_MS,
+      },
+    );
 
     // The native app must validate this signed token through /api/auth/me;
     // returned display data is informational and is not an auth assertion.
@@ -195,6 +216,14 @@ export function registerOAuthRoutes(app: Express) {
   // persisted server-side; its hash is signed into state for horizontal scale.
   app.post("/api/oauth/start", (req: Request, res: Response) => {
     try {
+      if (
+        Object.keys(req.body ?? {}).some(
+          (key) => !["verifier", "redirectUri"].includes(key),
+        )
+      ) {
+        res.status(400).json({ error: "Invalid authentication request" });
+        return;
+      }
       const verifier =
         typeof req.body?.verifier === "string" ? req.body.verifier : "";
       const redirectUri =
@@ -240,11 +269,16 @@ export function registerOAuthRoutes(app: Express) {
     try {
       const tokenResponse = await sdk.exchangeCodeForToken(code, state);
       const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
-      await syncUser(userInfo);
-      const sessionToken = await sdk.createSessionToken(userInfo.openId!, {
-        name: userInfo.name ?? "",
-        expiresInMs: ONE_YEAR_MS,
-      });
+      const user = await syncUser(userInfo);
+      const sessionToken = await sdk.createManagedSessionToken(
+        user.id,
+        user.openId,
+        await createPersistedSid(user.id),
+        {
+          name: userInfo.name ?? "",
+          expiresInMs: ONE_YEAR_MS,
+        },
+      );
       setApplicationSession(res, req, sessionToken);
       res.redirect(302, getFrontendRedirectUri());
     } catch {
