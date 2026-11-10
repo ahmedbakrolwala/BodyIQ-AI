@@ -8,6 +8,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { isDatabaseReachable } from "./db";
 import { fitnessRouter } from "./routers/fitness";
+import { foodScannerRouter } from "./routers/food-scanner";
 import { profileRouter } from "./routers/profile";
 import { trackingRouter } from "./routers/tracking";
 
@@ -34,6 +35,7 @@ export const appRouter = router({
   }),
   profile: profileRouter,
   fitness: fitnessRouter,
+  foodScanner: foodScannerRouter,
   tracking: trackingRouter,
   foundation: router({
     status: publicProcedure.query(async () => ({

@@ -29,8 +29,8 @@ const pages = {
         "Sign in to save your private fitness profile. Start the five-step onboarding from Home, Nutrition, Workouts or Profile; review and edit it through View my fitness profile. Existing Manus access remains available while Google/email delivery awaits configuration.",
       ],
       [
-        "Scanner and coach demos",
-        "The scanner uses a predefined meal sample, not a camera or recognition model. Coach conversations are scripted UI examples, not live AI or medical advice.",
+        "Food scanner and coach stages",
+        "The food scanner can capture or choose a photo, request a server-side AI estimate, and let you correct the result before saving. Images can be unclear and nutrition values are estimates, not exact facts. Coach conversations remain scripted UI examples, not live AI or medical advice.",
       ],
     ],
   },
@@ -46,7 +46,7 @@ const pages = {
       ],
       [
         "What is not collected",
-        "Design previews do not capture camera images, log meals or send conversations to an AI service. Demo metrics are not saved to the cloud. Measurements you explicitly save through fitness onboarding are private account records, not demo data.",
+        "Design previews do not capture camera images or save demo meals. When you use the authenticated scanner, the selected photo is sent through BodyIQ’s server to the managed vision service for analysis; only a confirmed, corrected meal enters your private food diary. Scan images are stored in project object storage so the vision service can fetch them, and are not linked to a meal record by the app.",
       ],
       [
         "Device preferences",
@@ -84,7 +84,7 @@ const pages = {
       ],
       [
         "Current stage",
-        "This release builds the app foundation and polished design preview. Private account and fitness profiles, estimated targets, real Home tracking and starter recommendations are implemented. Live Google/email activation needs provider setup; advanced tracking, food recognition and live AI coaching remain inactive.",
+        "This release includes private profiles, estimated targets, real Home tracking, manual logging and the server-side AI food scanner. Scanner values remain approximate and editable. Live Google/email activation needs provider setup; AI Coach conversations remain a scripted preview.",
       ],
       [
         "Not a medical service",

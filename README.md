@@ -6,19 +6,25 @@ BodyIQ AI is a cross-platform fitness application built with TypeScript, React N
 
 ## Functional Home dashboard
 
-Authenticated Home shows database-backed calories/macros, current weight, weekly workout frequency, actual sessions and recent progress. Meal logging, workout start/completion and weight updates persist private records and refresh Home automatically. Missing data is not replaced by sample numbers. The prior Home remains a guest-only design preview. Scanner navigation/manual logging work, but recognition remains a labeled demo. Migration 0004 adds owner-scoped tracking tables. See `docs/DASHBOARD_REPORT.md` for the completed functionality, synchronization policy, tests and limitations.
+Authenticated Home shows database-backed calories/macros, current weight, weekly workout frequency, actual sessions and recent progress. Meal logging, workout start/completion, weight updates and confirmed scanner meals persist private records and refresh Home automatically. Missing data is not replaced by sample numbers. The prior Home remains a guest-only design preview. Migration 0004 adds owner-scoped tracking tables. See `docs/DASHBOARD_REPORT.md` for the completed functionality, synchronization policy, tests and limitations.
+
+## AI food scanner
+
+The authenticated Food Scanner supports camera capture and gallery selection through Expo ImagePicker. Photos are sent as bounded base64 input to the protected `foodScanner.analyze` procedure. The server uploads the image to managed object storage, passes a signed fetch URL to the built-in Manus vision-capable LLM runtime, validates the structured result, and returns only an estimate. No AI credential is included in the mobile bundle. Indian and international foods, likely ingredients, serving size, confidence and estimated calories/macros are supported; unclear images return no nutrition instead of fabricated values.
+
+Users review and edit food name, serving size, meal type and all nutrition fields before confirming. Confirmation reuses the owner-scoped `tracking.logMeal` mutation and updates daily totals. The optional server-only `FOOD_SCANNER_MODEL` value may select a model present in the managed LLM catalog; if omitted or unavailable, the built-in default route is used. The selected model/default must support image input. Managed Manus AI runtime and object storage are the only services required; no separate OpenAI, Google Vision or nutrition-provider key is configured. See `docs/FOOD_SCANNER_REPORT.md` for security, storage and verification boundaries.
 
 ## Phase 1 history
 
 The app includes branded splash/welcome screens, reusable dark/green UI, five-tab navigation, Home/Nutrition/Workouts/Progress/AI Coach placeholders, functioning navigation and concept previews, secure Manus OAuth, and a basic cloud profile editor. The profile persists a display name, broad fitness goal, country code and preferred units. Guests can explore without saving personal data.
 
-At the initial Phase 1 delivery, advanced meal logging, calorie estimation, workout generation, health measurements, AI chat and coaching were not active. Later upgrades below supersede those initial boundaries; live AI chat/recognition remain inactive.
+At the initial Phase 1 delivery, advanced meal logging, calorie estimation, workout generation, health measurements, AI chat and coaching were not active. Later upgrades below supersede those initial boundaries; live AI Coach chat remains inactive.
 
 ## Premium interface upgrade
 
 The existing project now includes polished Welcome, Login, Registration, Home, Nutrition, Food Scanner, Workouts, Progress, AI Coach, Profile, Settings and support screens. The five-tab fitness navigation remains intact. Login/Registration use the preserved OAuth provider; Profile still saves real authenticated basic account data to the cloud.
 
-Design Preview shows explicitly labeled, local-only sample data. The banner eye control and Settings switch hide samples and restore empty states. Scanner results and Coach conversations are predefined design demos, not live recognition or AI. Preview preferences are device-local and samples are never seeded into the database. Read `docs/INTERFACE_REPORT.md` for screen and interaction checks, completed refinements and release-stage limits.
+Design Preview shows explicitly labeled, local-only sample data. The banner eye control and Settings switch hide samples and restore empty states. Coach conversations remain predefined design demos, not live AI. The authenticated scanner is separate from Design Preview and never uses preview values. Preview preferences are device-local and samples are never seeded into the database. Read `docs/INTERFACE_REPORT.md` for historical screen and interaction checks, and `docs/FOOD_SCANNER_REPORT.md` for the scanner handoff.
 
 ## Authentication upgrade
 

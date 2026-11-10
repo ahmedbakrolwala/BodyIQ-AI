@@ -110,6 +110,15 @@ const config: ExpoConfig = {
     "expo-asset",
     "expo-router",
     [
+      "expo-image-picker",
+      {
+        photosPermission:
+          "Allow BodyIQ AI to choose a food photo for nutrition estimation.",
+        cameraPermission:
+          "Allow BodyIQ AI to take a food photo for nutrition estimation.",
+      },
+    ],
+    [
       "expo-audio",
       {
         microphonePermission:

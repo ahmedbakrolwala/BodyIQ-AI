@@ -196,8 +196,8 @@ export default function RealHomeScreen() {
           onPress={() => router.push("/scanner")}
         />
         <Body style={{ fontSize: 11 }}>
-          Scanner preview results are not recorded. Use meal logging to save
-          known amounts.
+          Scan a photo, review the estimates, correct anything needed, then
+          confirm it into today’s diary.
         </Body>
         <Button
           title={
