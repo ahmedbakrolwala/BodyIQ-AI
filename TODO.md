@@ -5,7 +5,7 @@
 - [x] Create the application project, scalable architecture, folder structure, environment configuration and maintainable source foundation using TypeScript, React Native and Expo Router; keep complete source accessible for Android/iOS-compatible layouts.
 - [x] Build reusable UI components with premium black/charcoal backgrounds, white typography, electric-green accents, modern cards, accessible states, smooth animations and responsive mobile spacing.
 - [x] Implement branded splash and welcome screens, five-tab navigation for Home, Nutrition, Workouts, Progress and AI Coach, and placeholder layouts without advanced features.
-- [x] Configure persistent Manus-managed cloud database architecture, server APIs, secure authentication and basic private profile persistence.
+- [x] Configure persistent Manus-managed cloud database architecture, server APIs, secure authentication and private profile persistence.
 - [x] Validate runtime, TypeScript/build, platform JavaScript exports and provide Phase 1 handoff documentation.
 
 ## Premium interface upgrade
@@ -37,8 +37,18 @@
 - [x] Return validated likely food items and ingredients, estimated serving size, calories, protein, carbohydrates and fat, confidence and uncertainty notes. Label all values as estimates and return no nutrition for unclear images rather than fabricating results.
 - [x] Let users edit food name, serving size, meal type and every nutrition estimate before confirmation.
 - [x] Confirm and save a corrected meal through the existing owner-scoped `tracking.logMeal` mutation and refresh daily nutrition totals. Preserve the draft/client ID for retry.
-- [x] Preserve scanner/manual logging navigation. Validate backend MIME/size/auth boundaries, clear/unclear/invalid model outputs, native config, browser gallery → estimate → edit → confirm flow and service-failure states without writing test data to the cloud.
+- [x] Preserve scanner/manual logging navigation and validate backend MIME/size/auth boundaries, clear/unclear/invalid model outputs, native config, browser gallery → estimate → edit → confirm flow and service-failure states without writing test data to the cloud.
+
+## Nutrition system
+
+- [x] Support breakfast, lunch, dinner and snack sections in the authenticated nutrition experience, with daily calorie and macro totals sourced from the user’s real food logs.
+- [x] Provide authenticated food search against a server-owned Indian/international catalog with vegetarian and non-vegetarian options, estimated nutrition and ingredient quantities; keep catalog values clearly labeled as estimates.
+- [x] Preserve manual food logging and add owner-scoped meal editing and deletion with confirmation, validation, idempotent/retry-safe behavior and automatic dashboard total refresh.
+- [x] Generate one-day, seven-day and thirty-day meal plans personalized from the saved fitness goal, derived calorie/macronutrient targets, dietary preference and allergies; support vegetarian/non-vegetarian choices and Indian/international cuisine.
+- [x] Support budget-based plan selection, ingredient quantities and estimated nutrition, saved plans and grocery lists derived from saved plan meals.
+- [x] Persist saved plans, plan meals and grocery lines to the managed database with additive migration `0005_empty_shinobi_shaw.sql` and strict per-user ownership; no test health data was seeded.
+- [x] Preserve scanner/manual logging, existing dashboard, authentication, onboarding and Design Preview; validate mobile route compilation, loading/error/empty states, ownership contracts and all plan durations through checks and focused tests.
 
 ## Evidence
 
-The current project has a healthy Metro listener on port 8081 and API health endpoint on port 3000. The scanner endpoint rejects an unauthenticated request with HTTP 401. The scanner test suite covers secure storage upload, signed image URL handoff, structured vision output, unclear results, invalid/oversized/unsupported input, invalid model output and protected router access. Full regression suite: 94 tests passed across 18 files. TypeScript check, targeted lint, server build and web/Android/iOS Expo exports passed. Browser fixture verified gallery input, structured estimate rendering with ingredients, editable values, confirmation and dashboard refresh from 0 to 390 kcal consumed / 1,710 kcal remaining; fixture was reloaded and no real user or health records were written. Native camera permission and signed release builds remain physical-device/release-stage checks. See `docs/FOOD_SCANNER_REPORT.md`.
+The current project has healthy Metro and API listeners on ports 8081 and 3000. The full regression suite passes 99 tests across 19 files. TypeScript check, lint, backend build and web/Android/iOS Expo exports pass. The guest Nutrition route was verified in the public browser with explicit Design Preview/sample labels. A browser-only authenticated fixture verified live nutrition totals, a real meal card and all four meal sections; it was reloaded afterward and made no cloud writes. See `docs/NUTRITION_REPORT.md` and `docs/FOOD_SCANNER_REPORT.md`.

@@ -1,0 +1,67 @@
+{
+  "routes": [
+    {
+      "path": "/account-security"
+    },
+    {
+      "path": "/delete-account"
+    },
+    {
+      "path": "/fitness-profile"
+    },
+    {
+      "path": "/forgot-password"
+    },
+    {
+      "path": "/grocery-list"
+    },
+    {
+      "path": "/"
+    },
+    {
+      "path": "/log-meal"
+    },
+    {
+      "path": "/log-weight"
+    },
+    {
+      "path": "/login"
+    },
+    {
+      "path": "/meal-plan"
+    },
+    {
+      "path": "/onboarding"
+    },
+    {
+      "path": "/profile"
+    },
+    {
+      "path": "/register"
+    },
+    {
+      "path": "/reset-password"
+    },
+    {
+      "path": "/scanner"
+    },
+    {
+      "path": "/settings"
+    },
+    {
+      "path": "/support"
+    },
+    {
+      "path": "/verify-email"
+    },
+    {
+      "path": "/welcome"
+    },
+    {
+      "path": "/workout-session"
+    },
+    {
+      "path": "/nutrition"
+    }
+  ]
+}

@@ -119,6 +119,8 @@ export default function RootLayout() {
                 <Stack.Screen name="onboarding" />
                 <Stack.Screen name="fitness-profile" />
                 <Stack.Screen name="log-meal" />
+                <Stack.Screen name="meal-plan" />
+                <Stack.Screen name="grocery-list" />
                 <Stack.Screen name="workout-session" />
                 <Stack.Screen name="log-weight" />
                 <Stack.Screen name="settings" />

@@ -10,6 +10,7 @@ import { isDatabaseReachable } from "./db";
 import { fitnessRouter } from "./routers/fitness";
 import { foodScannerRouter } from "./routers/food-scanner";
 import { profileRouter } from "./routers/profile";
+import { nutritionRouter } from "./routers/nutrition";
 import { trackingRouter } from "./routers/tracking";
 
 export const appRouter = router({
@@ -37,6 +38,7 @@ export const appRouter = router({
   fitness: fitnessRouter,
   foodScanner: foodScannerRouter,
   tracking: trackingRouter,
+  nutrition: nutritionRouter,
   foundation: router({
     status: publicProcedure.query(async () => ({
       service: "BodyIQ AI",

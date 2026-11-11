@@ -14,6 +14,12 @@ The authenticated Food Scanner supports camera capture and gallery selection thr
 
 Users review and edit food name, serving size, meal type and all nutrition fields before confirming. Confirmation reuses the owner-scoped `tracking.logMeal` mutation and updates daily totals. The optional server-only `FOOD_SCANNER_MODEL` value may select a model present in the managed LLM catalog; if omitted or unavailable, the built-in default route is used. The selected model/default must support image input. Managed Manus AI runtime and object storage are the only services required; no separate OpenAI, Google Vision or nutrition-provider key is configured. See `docs/FOOD_SCANNER_REPORT.md` for security, storage and verification boundaries.
 
+## Nutrition system
+
+The authenticated Nutrition tab now uses real owner-scoped food logs and saved fitness targets. It groups meals into breakfast, lunch, dinner and snacks, supports daily calorie/macro totals, manual logging, catalog search, meal edit/delete and automatic refresh after tracking mutations. Guests retain the clearly labeled local-only Design Preview.
+
+The server-owned nutrition catalog covers Indian and international dishes, vegetarian and non-vegetarian options, ingredient quantities, estimated nutrition and approximate INR costs. The plan builder supports one-, seven- and thirty-day plans, cuisine, budget and dietary-mode controls. Plans require a saved fitness profile and apply its goals, targets, dietary preference and allergies. Saved plans persist meals and aggregated grocery lines in migration 0005; grocery lists are available from `/grocery-list`. Nutrition and price values are estimates, not medical advice, allergy guarantees or live market quotes. See `docs/NUTRITION_REPORT.md` for data ownership, migration, verification and release boundaries.
+
 ## Phase 1 history
 
 The app includes branded splash/welcome screens, reusable dark/green UI, five-tab navigation, Home/Nutrition/Workouts/Progress/AI Coach placeholders, functioning navigation and concept previews, secure Manus OAuth, and a basic cloud profile editor. The profile persists a display name, broad fitness goal, country code and preferred units. Guests can explore without saving personal data.

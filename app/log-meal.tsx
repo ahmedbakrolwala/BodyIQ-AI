@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import * as Crypto from "expo-crypto";
 import {
   AuthGate,
@@ -36,21 +36,117 @@ export default function LogMealScreen() {
   return <LogMealForm key={auth.user?.id ?? "signed-out"} />;
 }
 
+type MealDraft = {
+  name: string;
+  mealType: MealType;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+};
+
+function parseCatalogDraft(rawCatalog: string | undefined): MealDraft | null {
+  if (!rawCatalog) return null;
+  try {
+    const value = JSON.parse(rawCatalog) as Record<string, unknown>;
+    if (
+      typeof value.name !== "string" ||
+      typeof value.calories !== "number" ||
+      typeof value.protein !== "number" ||
+      typeof value.carbs !== "number" ||
+      typeof value.fat !== "number"
+    )
+      return null;
+    return {
+      name: value.name.slice(0, 100),
+      mealType: "breakfast",
+      calories: value.calories,
+      proteinG: value.protein,
+      carbsG: value.carbs,
+      fatG: value.fat,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function mealToDraft(meal: {
+  name: string;
+  mealType: MealType;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}): MealDraft {
+  return {
+    name: meal.name,
+    mealType: meal.mealType,
+    calories: meal.calories,
+    proteinG: meal.proteinG,
+    carbsG: meal.carbsG,
+    fatG: meal.fatG,
+  };
+}
+
 function LogMealForm() {
+  const params = useLocalSearchParams<{ editId?: string; catalog?: string }>();
+  const editId = Number(params.editId);
+  const editing = Number.isInteger(editId) && editId > 0;
+  const summary = trpc.tracking.get.useQuery(
+    { timeZone: getDeviceTimeZone() },
+    { enabled: editing, retry: false },
+  );
+  const rawCatalog =
+    typeof params.catalog === "string" ? params.catalog : undefined;
+  const catalogDraft = parseCatalogDraft(rawCatalog);
+  const loadedMeal = editing
+    ? summary.data?.meals.find((item) => item.id === editId)
+    : undefined;
+  const initialDraft = loadedMeal ? mealToDraft(loadedMeal) : catalogDraft;
+  return (
+    <LogMealEditor
+      key={loadedMeal ? `meal-${loadedMeal.id}` : (rawCatalog ?? "new")}
+      initialDraft={initialDraft}
+      editId={editId}
+      editing={editing}
+    />
+  );
+}
+
+function LogMealEditor({
+  initialDraft,
+  editId,
+  editing,
+}: {
+  initialDraft: MealDraft | null;
+  editId: number;
+  editing: boolean;
+}) {
   const saveMeal = trpc.tracking.logMeal.useMutation();
+  const updateMeal = trpc.tracking.updateMeal.useMutation();
   const refreshTracking = useRefreshTracking();
-  const [name, setName] = useState("");
-  const [mealType, setMealType] = useState<MealType>("breakfast");
-  const [calories, setCalories] = useState("");
-  const [protein, setProtein] = useState("");
-  const [carbs, setCarbs] = useState("");
-  const [fat, setFat] = useState("");
+  const [name, setName] = useState(() => initialDraft?.name ?? "");
+  const [mealType, setMealType] = useState<MealType>(
+    () => initialDraft?.mealType ?? "breakfast",
+  );
+  const [calories, setCalories] = useState(() =>
+    initialDraft ? String(initialDraft.calories) : "",
+  );
+  const [protein, setProtein] = useState(() =>
+    initialDraft ? String(initialDraft.proteinG) : "",
+  );
+  const [carbs, setCarbs] = useState(() =>
+    initialDraft ? String(initialDraft.carbsG) : "",
+  );
+  const [fat, setFat] = useState(() =>
+    initialDraft ? String(initialDraft.fatG) : "",
+  );
   const [mealClientId, setMealClientId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [saved, setSaved] = useState(false);
-
-  const locked = saveMeal.isPending || Boolean(submitError);
+  const locked =
+    saveMeal.isPending || updateMeal.isPending || Boolean(submitError);
 
   function clearDraft() {
     setName("");
@@ -93,6 +189,26 @@ function LogMealForm() {
       return;
     }
 
+    if (editing) {
+      try {
+        await updateMeal.mutateAsync({
+          id: editId,
+          name: name.trim(),
+          mealType,
+          calories: kcal,
+          proteinG,
+          carbsG,
+          fatG,
+        });
+        await refreshTracking();
+        setSaved(true);
+      } catch {
+        setSubmitError(
+          "We couldn’t confirm this update. Your entry was not reported as changed.",
+        );
+      }
+      return;
+    }
     const clientId = mealClientId ?? Crypto.randomUUID();
     setMealClientId(clientId);
     try {
@@ -145,7 +261,9 @@ function LogMealForm() {
         </Card>
       ) : (
         <>
-          <Text style={styles.heading}>Add what you ate.</Text>
+          <Text style={styles.heading}>
+            {editing ? "Edit your meal." : "Add what you ate."}
+          </Text>
           <Body style={{ marginBottom: 22 }}>
             Keep your record honest and simple. Enter the nutrition information
             from your label or source; BodyIQ does not invent values here.
@@ -247,9 +365,15 @@ function LogMealForm() {
           {validationError ? <FieldError>{validationError}</FieldError> : null}
           <View style={{ marginTop: 18 }}>
             <Button
-              title={saveMeal.isPending ? "Saving securely…" : "Save meal"}
+              title={
+                saveMeal.isPending || updateMeal.isPending
+                  ? "Saving securely…"
+                  : editing
+                    ? "Save changes"
+                    : "Save meal"
+              }
               onPress={() => void submit()}
-              disabled={saveMeal.isPending}
+              disabled={saveMeal.isPending || updateMeal.isPending}
               icon="check"
             />
           </View>

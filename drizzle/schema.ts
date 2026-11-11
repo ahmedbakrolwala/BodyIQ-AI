@@ -336,3 +336,67 @@ export const weightLogs = mysqlTable(
 
 export type WeightLog = typeof weightLogs.$inferSelect;
 export type InsertWeightLog = typeof weightLogs.$inferInsert;
+/** Server-generated, user-owned nutrition plan snapshots. */
+export const mealPlans = mysqlTable(
+  "mealPlans",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    durationDays: int("durationDays").notNull(),
+    cuisine: mysqlEnum("cuisine", [
+      "indian",
+      "international",
+      "mixed",
+    ]).notNull(),
+    budget: mysqlEnum("budget", ["low", "standard", "flexible"]).notNull(),
+    dietaryMode: mysqlEnum("dietaryMode", [
+      "profile",
+      "vegetarian",
+      "non_vegetarian",
+    ]).notNull(),
+    targetSnapshot: json("targetSnapshot").notNull(),
+    profileSnapshot: json("profileSnapshot").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("mealPlans_user_created_idx").on(table.userId, table.createdAt),
+  ],
+);
+export const mealPlanMeals = mysqlTable(
+  "mealPlanMeals",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    planId: int("planId")
+      .notNull()
+      .references(() => mealPlans.id, { onDelete: "cascade" }),
+    day: int("day").notNull(),
+    mealType: mysqlEnum("mealType", [
+      "breakfast",
+      "lunch",
+      "dinner",
+      "snack",
+    ]).notNull(),
+    foodId: varchar("foodId", { length: 80 }).notNull(),
+    foodSnapshot: json("foodSnapshot").notNull(),
+    estimatedCostInr: double("estimatedCostInr").notNull(),
+  },
+  (table) => [index("mealPlanMeals_plan_day_idx").on(table.planId, table.day)],
+);
+export const mealPlanGroceries = mysqlTable(
+  "mealPlanGroceries",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    planId: int("planId")
+      .notNull()
+      .references(() => mealPlans.id, { onDelete: "cascade" }),
+    ingredient: varchar("ingredient", { length: 120 }).notNull(),
+    quantity: double("quantity").notNull(),
+    unit: varchar("unit", { length: 32 }).notNull(),
+  },
+  (table) => [index("mealPlanGroceries_plan_idx").on(table.planId)],
+);
+export type MealPlan = typeof mealPlans.$inferSelect;
+export type MealPlanMeal = typeof mealPlanMeals.$inferSelect;
+export type MealPlanGrocery = typeof mealPlanGroceries.$inferSelect;

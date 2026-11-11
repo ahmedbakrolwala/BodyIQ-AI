@@ -28,8 +28,23 @@ import { FoodImage, Meter } from "@/components/bodyiq/premium";
 import { palette as p } from "@/constants/design";
 import { sampleDay, sampleMeals } from "@/lib/sample-data";
 import { useDesignPreview } from "@/lib/preview-context";
+import { useAuth } from "@/hooks/use-auth";
+import NutritionReal from "@/components/bodyiq/nutrition-real";
 
 export default function NutritionScreen() {
+  const auth = useAuth();
+  if (auth.isAuthenticated) {
+    return (
+      <Screen preview={false}>
+        <Header title="Fuel with intention." eyebrow="NUTRITION" />
+        <NutritionReal />
+      </Screen>
+    );
+  }
+  return <GuestNutritionPreview />;
+}
+
+function GuestNutritionPreview() {
   const { isPreview } = useDesignPreview();
   const { width } = useWindowDimensions();
   const [day, setDay] = useState("Today");

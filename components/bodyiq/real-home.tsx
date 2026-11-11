@@ -37,10 +37,11 @@ function Stat({ label, value }: { label: string; value: string }) {
 export default function RealHomeScreen() {
   const auth = useAuth();
   const query = useTrackingSummary();
+  const { refetch } = query;
   useFocusEffect(
     useCallback(() => {
-      void query.refetch();
-    }, [query.refetch]),
+      void refetch();
+    }, [refetch]),
   );
   const data = query.data;
   if (!data)
@@ -64,10 +65,7 @@ export default function RealHomeScreen() {
                 substituted.
               </Body>
               <View style={{ height: 18 }} />
-              <Button
-                title="Retry dashboard"
-                onPress={() => void query.refetch()}
-              />
+              <Button title="Retry dashboard" onPress={() => void refetch()} />
             </>
           )}
         </Card>
@@ -373,7 +371,7 @@ export default function RealHomeScreen() {
         title={query.isFetching ? "Updating dashboard…" : "Refresh dashboard"}
         secondary
         disabled={query.isFetching}
-        onPress={() => void query.refetch()}
+        onPress={() => void refetch()}
       />
       <Body style={{ fontSize: 10, marginTop: 12 }}>
         Updates after saves, on return and app foreground, with a 30-second

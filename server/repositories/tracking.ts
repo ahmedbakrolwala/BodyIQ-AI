@@ -21,6 +21,7 @@ import type {
   LogMealInput,
   LogWeightInput,
   MealRecord,
+  UpdateMealInput,
   StartWorkoutInput,
   TrackingSummary,
   WeightRecord,
@@ -167,7 +168,10 @@ export async function logMeal(
         .select()
         .from(foodLogs)
         .where(
-          and(eq(foodLogs.userId, userId), eq(foodLogs.clientId, input.clientId)),
+          and(
+            eq(foodLogs.userId, userId),
+            eq(foodLogs.clientId, input.clientId),
+          ),
         )
         .limit(1);
       if (existing[0]) {
@@ -190,7 +194,10 @@ export async function logMeal(
         .select()
         .from(foodLogs)
         .where(
-          and(eq(foodLogs.userId, userId), eq(foodLogs.clientId, input.clientId)),
+          and(
+            eq(foodLogs.userId, userId),
+            eq(foodLogs.clientId, input.clientId),
+          ),
         )
         .limit(1);
       if (!inserted[0])
@@ -210,6 +217,46 @@ export async function logMeal(
     if (!sameMeal(existing[0], input)) throw new TrackingConflictError();
     return mealRecord(existing[0]);
   }
+}
+
+export async function updateMeal(
+  userId: number,
+  input: UpdateMealInput,
+): Promise<MealRecord> {
+  const db = await requireDb();
+  return db.transaction(async (tx) => {
+    const owned = await tx
+      .select()
+      .from(foodLogs)
+      .where(and(eq(foodLogs.id, input.id), eq(foodLogs.userId, userId)))
+      .limit(1);
+    if (!owned[0]) throw new TrackingNotFoundError("Meal not found");
+    const { id: _id, ...changes } = input;
+    await tx
+      .update(foodLogs)
+      .set(changes)
+      .where(and(eq(foodLogs.id, input.id), eq(foodLogs.userId, userId)));
+    const updated = await tx
+      .select()
+      .from(foodLogs)
+      .where(and(eq(foodLogs.id, input.id), eq(foodLogs.userId, userId)))
+      .limit(1);
+    if (!updated[0]) throw new Error("Meal update could not be read");
+    return mealRecord(updated[0]);
+  });
+}
+
+export async function deleteMeal(
+  userId: number,
+  id: number,
+): Promise<{ deleted: true }> {
+  const db = await requireDb();
+  const result = await db
+    .delete(foodLogs)
+    .where(and(eq(foodLogs.id, id), eq(foodLogs.userId, userId)));
+  if (Number(result[0]?.affectedRows ?? 0) !== 1)
+    throw new TrackingNotFoundError("Meal not found");
+  return { deleted: true };
 }
 
 export async function startWorkout(

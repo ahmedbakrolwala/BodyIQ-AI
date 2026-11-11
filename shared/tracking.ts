@@ -39,6 +39,25 @@ export const logMealInputSchema = z
   })
   .strict();
 
+export const updateMealInputSchema = z
+  .object({
+    id: z.number().int().positive(),
+    name: z.string().trim().min(1).max(100).optional(),
+    mealType: mealTypeSchema.optional(),
+    calories: z.number().finite().min(0).max(10_000).optional(),
+    proteinG: z.number().finite().min(0).max(1_000).optional(),
+    carbsG: z.number().finite().min(0).max(1_000).optional(),
+    fatG: z.number().finite().min(0).max(1_000).optional(),
+  })
+  .strict()
+  .refine(
+    (value) => Object.keys(value).length > 1,
+    "At least one meal field is required",
+  );
+export const deleteMealInputSchema = z
+  .object({ id: z.number().int().positive() })
+  .strict();
+
 export const startWorkoutInputSchema = z
   .object({ clientId: clientIdSchema, timeZone: timeZoneSchema })
   .strict();
@@ -58,6 +77,8 @@ export const logWeightInputSchema = z
 export type MealType = z.infer<typeof mealTypeSchema>;
 export type TrackingGetInput = z.infer<typeof trackingGetInputSchema>;
 export type LogMealInput = z.infer<typeof logMealInputSchema>;
+export type UpdateMealInput = z.infer<typeof updateMealInputSchema>;
+export type DeleteMealInput = z.infer<typeof deleteMealInputSchema>;
 export type StartWorkoutInput = z.infer<typeof startWorkoutInputSchema>;
 export type CompleteWorkoutInput = z.infer<typeof completeWorkoutInputSchema>;
 export type LogWeightInput = z.infer<typeof logWeightInputSchema>;
