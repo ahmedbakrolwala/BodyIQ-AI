@@ -20,6 +20,12 @@ The authenticated Nutrition tab now uses real owner-scoped food logs and saved f
 
 The server-owned nutrition catalog covers Indian and international dishes, vegetarian and non-vegetarian options, ingredient quantities, estimated nutrition and approximate INR costs. The plan builder supports one-, seven- and thirty-day plans, cuisine, budget and dietary-mode controls. Plans require a saved fitness profile and apply its goals, targets, dietary preference and allergies. Saved plans persist meals and aggregated grocery lines in migration 0005; grocery lists are available from `/grocery-list`. Nutrition and price values are estimates, not medical advice, allergy guarantees or live market quotes. See `docs/NUTRITION_REPORT.md` for data ownership, migration, verification and release boundaries.
 
+## Workout generator and tracking
+
+The authenticated Workouts tab generates owner-scoped plans from the saved fitness profile and explicit choices: muscle gain, fat loss, strength or general fitness; gym or home; full body, upper/lower, push/pull/legs or individual muscle group. The server-owned exercise catalog filters by location and equipment and returns name, target muscles, instructions, sets, repetitions, rest, equipment and optional demonstration metadata.
+
+Users review a plan, explicitly start a session, log repetitions and weights, replace or skip exercises, and explicitly complete the workout. Sessions and set logs persist in additive migration 0006 with strict user ownership and idempotent start/set/completion procedures. `/workout-history` shows completed sessions, while `/workout-records` derives estimated Epley records only from completed logged sets. All records are labeled as estimates; no sample performance is written. See `docs/WORKOUT_REPORT.md` for architecture, verification and safety boundaries.
+
 ## Phase 1 history
 
 The app includes branded splash/welcome screens, reusable dark/green UI, five-tab navigation, Home/Nutrition/Workouts/Progress/AI Coach placeholders, functioning navigation and concept previews, secure Manus OAuth, and a basic cloud profile editor. The profile persists a display name, broad fitness goal, country code and preferred units. Guests can explore without saving personal data.

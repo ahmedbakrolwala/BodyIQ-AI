@@ -1,41 +1,48 @@
-# BodyIQ AI Nutrition System Plan
+# BodyIQ AI Nutrition and Workout System Plan
 
-## Implementation approach
+## Existing nutrition architecture
 
-Extend the existing TypeScript/React Native/Expo Router mobile app and Express/tRPC backend. Reuse the current owner-scoped `foodLogs` records for daily food logging, adding authenticated edit/delete mutations and a curated server-owned food catalog for search. Add additive managed-MySQL tables for saved meal plans and their meals/grocery lines. Generate plans deterministically from the saved fitness profile, derived calorie/macronutrient targets, dietary preference, allergies, cuisine and budget rather than inventing unsafe health facts. Every private query and mutation derives ownership from the authenticated session.
+The existing TypeScript/React Native/Expo Router mobile app and Express/tRPC backend use owner-scoped Drizzle persistence on Manus-managed MySQL-compatible cloud data. Nutrition uses server-owned catalogs, strict shared contracts, protected tRPC procedures and additive migrations. The workout system follows the same architecture and keeps all prior nutrition, scanner, onboarding, authentication and dashboard behavior intact.
 
-The nutrition screen will preserve Design Preview for guests and add a real authenticated experience: date/day totals, meal sections for breakfast/lunch/dinner/snacks, search and manual logging, edit/delete controls, plan-duration and budget/cuisine filters, saved-plan cards and grocery-list access. Existing scanner confirmation continues to write through the same tracking mutation, so totals refresh through the existing tracking refresh layer.
+## Workout implementation approach
+
+Add a server-owned exercise catalog and a deterministic workout generator driven by the saved fitness profile plus explicit user selections. Supported goals are muscle gain, fat loss, strength and general fitness. Supported locations are gym and home. Supported structures are full body, upper/lower, push/pull/legs and individual muscle group focus. The generator filters exercises by location/equipment, selects an appropriate routine, and returns exercise instructions, target muscles, sets, repetitions, rest and optional demonstration metadata. It provides general fitness education, not medical treatment or a promise of results.
+
+Persist generated plans and completed sessions with owner-scoped records. A workout session stores its exercise snapshot so a later catalog change does not rewrite history. Set logs store exercise index, set number, repetitions, weight, completion state and timestamps. Replace and skip actions update only the active owner’s session. Completion is explicit and idempotent. Personal records are derived from completed logged sets using a transparent estimated one-repetition-max calculation and are never inferred from skipped or incomplete sets. Workout history and records are queried only for the signed-in user.
 
 ## Project structure
 
-- `shared/nutrition.ts`: strict catalog, log-edit/delete, plan-generation, saved-plan and grocery contracts.
-- `server/repositories/nutrition.ts`: owner-scoped catalog search, food-log CRUD, deterministic plan generation, saved-plan and grocery persistence.
-- `server/routers/nutrition.ts`: protected tRPC procedures; no client-supplied user IDs.
-- `drizzle/schema.ts` and an additive migration: saved meal-plan, plan-meal and grocery tables; existing food logs remain the diary source.
-- `components/bodyiq/nutrition-real.tsx` and reusable nutrition controls: authenticated totals, meal sections, search, editor, plan builder and grocery list.
-- `app/(tabs)/nutrition.tsx`: route-level preview/real-data split that preserves the current design preview.
-- `app/meal-plan.tsx` and `app/grocery-list.tsx`: functional saved-plan and grocery destinations.
+- `shared/workouts.ts`: strict goal/location/split schemas, exercise and plan contracts, set logging and replacement inputs.
+- `server/services/workout-catalog.ts`: curated exercise catalog, equipment/location filtering and plan-generation rules.
+- `server/repositories/workouts.ts`: owner-scoped plan/session/set/history/PR persistence and aggregation.
+- `server/routers/workouts.ts`: protected tRPC procedures for generate, start, log set, replace, skip, complete, history and records.
+- `drizzle/schema.ts` plus additive migration: workout plans, plan exercises, sessions, set logs and indexes.
+- `components/bodyiq/workout-generator.tsx`: authenticated selection controls and generated-plan review.
+- `components/bodyiq/workout-session-real.tsx`: active exercise card, set logger, replace/skip controls and completion state.
+- `app/(tabs)/workouts.tsx`: route-level Design Preview/real-data split preserving the current premium preview.
+- `app/workout-history.tsx` and `app/workout-records.tsx`: history and personal-record destinations.
+- `app/workout-session.tsx`: route entry that preserves existing deep links while using the new session flow.
 
 ## Design decisions
 
-**Design movement:** editorial performance nutrition with a premium dark athletic dashboard (probability 0.06). Alternative: clinical food ledger (0.08). Alternative: bright wellness journal (0.04).
+**Design movement:** editorial performance training with a premium dark athletic dashboard (probability 0.06). Alternative: clinical training ledger (0.08). Alternative: bright wellness journal (0.04).
 
-**Core principles:** show real recorded values separately from estimates; make every plan input visible and editable; keep meals scannable by time of day; prefer safe empty states over fabricated personalization.
+**Core principles:** keep plan choices visible; make one active exercise the clear focal point; show logged sets as real records, not sample metrics; make replacement, skipping and completion reversible or explicit.
 
-**Color philosophy:** black and charcoal provide calm focus for daily decisions; electric green marks confirmed actions and personal targets; muted lavender, orange and blue distinguish macros without turning the screen into a traffic light.
+**Color philosophy:** black and charcoal provide calm focus; electric green marks active progress and completed sets; muted lavender, orange and blue distinguish strength, volume and recovery cues without overwhelming the screen.
 
-**Layout paradigm:** stacked timeline sections with horizontal summary rails, not a dense spreadsheet. Search and plan controls sit above the day’s meal timeline; saved plans open into a focused detail view.
+**Layout paradigm:** a vertical training flow with a compact plan rail above the active exercise card, followed by set rows and a clear next action; history and records use timestamped ledgers rather than dense tables.
 
-**Signature elements:** green edge accents for user-owned records, compact macro rails, and ingredient/grocery chips with quantities.
+**Signature elements:** green active-set edge accents, compact exercise metadata chips, and a high-contrast “next set” action.
 
-**Interaction philosophy:** search first, then confirm. Users can edit every estimate before saving; destructive deletion requires an explicit confirmation.
+**Interaction philosophy:** choose a goal and structure, inspect the generated plan, start explicitly, log one set at a time, and never silently mark an exercise or workout complete.
 
-**Animation:** use the existing reduced-motion-aware entrance transitions; animate totals and accordions subtly, never delaying a save or hiding loading/error states.
+**Animation:** use existing reduced-motion-aware transitions for plan expansion and completion feedback; no animation may delay a save, hide a retry state or imply a set was logged when it was not.
 
-**Typography and voice:** preserve the existing bold condensed-feeling section hierarchy and concise action language: “Build a plan that fits your week.” and “Check the ingredients before you cook.”
+**Typography and voice:** preserve the existing concise athletic hierarchy with copy such as “Build the session around your goal.” and “Log what you actually lifted.”
 
-**Brand essence:** an AI-ready nutrition operating system for people who want clear food decisions tied to their training goal. Personality: precise, motivating, grounded.
+**Brand essence:** an AI-ready training operating system for people who want clear next actions tied to their goal, equipment and real history. Personality: precise, motivating, grounded.
 
-## Boundaries
+## Safety and data boundaries
 
-Catalog nutrition and generated plan nutrition are estimates and are labeled as such. Allergies are used as exclusion filters, not safety guarantees; cross-contact and label checks remain the user’s responsibility. Budget is a planning preference and not a live price quote. No external food-price or medical API is required for Phase 1 of this nutrition system.
+Exercise demonstrations are optional metadata and may be absent; the interface must show a safe text instruction instead of a broken media placeholder. Equipment filters prevent unsupported selections where possible, but users remain responsible for form, load and medical clearance. Set weights and repetitions are user-entered records; no synthetic performance data is written. Personal records are estimates derived from completed logged sets and are labeled accordingly.

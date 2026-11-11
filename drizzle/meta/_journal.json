@@ -43,6 +43,13 @@
       "when": 1794303371822,
       "tag": "0005_empty_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1794379846447,
+      "tag": "0006_workout_backend",
+      "breakpoints": true
     }
   ]
 }

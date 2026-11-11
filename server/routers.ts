@@ -12,6 +12,7 @@ import { foodScannerRouter } from "./routers/food-scanner";
 import { profileRouter } from "./routers/profile";
 import { nutritionRouter } from "./routers/nutrition";
 import { trackingRouter } from "./routers/tracking";
+import { workoutsRouter } from "./routers/workouts";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -38,6 +39,7 @@ export const appRouter = router({
   fitness: fitnessRouter,
   foodScanner: foodScannerRouter,
   tracking: trackingRouter,
+  workouts: workoutsRouter,
   nutrition: nutritionRouter,
   foundation: router({
     status: publicProcedure.query(async () => ({

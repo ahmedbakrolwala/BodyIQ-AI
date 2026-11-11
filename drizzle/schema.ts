@@ -11,6 +11,10 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 import type { FitnessInput } from "../shared/fitness";
+import type {
+  ExerciseCatalogEntry,
+  WorkoutSelection,
+} from "../shared/workouts";
 
 /**
  * Core user table backing auth flow.
@@ -90,8 +94,22 @@ export const workoutSessions = mysqlTable(
       .references(() => users.id, { onDelete: "cascade" }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    planId: int("planId"),
+    clientId: varchar("clientId", { length: 36 }),
+    status: mysqlEnum("status", ["active", "completed"])
+      .default("active")
+      .notNull(),
+    startedAt: timestamp("startedAt"),
+    completedAt: timestamp("completedAt"),
   },
-  (table) => [index("workoutSessions_userId_idx").on(table.userId)],
+  (table) => [
+    index("workoutSessions_userId_idx").on(table.userId),
+    uniqueIndex("workoutSessions_user_client_unique").on(
+      table.userId,
+      table.clientId,
+    ),
+    index("workoutSessions_user_status_idx").on(table.userId, table.status),
+  ],
 );
 
 export const progressEntries = mysqlTable(
@@ -400,3 +418,96 @@ export const mealPlanGroceries = mysqlTable(
 export type MealPlan = typeof mealPlans.$inferSelect;
 export type MealPlanMeal = typeof mealPlanMeals.$inferSelect;
 export type MealPlanGrocery = typeof mealPlanGroceries.$inferSelect;
+
+/** Server-generated workout plan snapshots. Catalog data is copied into plan exercises. */
+export const workoutPlans = mysqlTable(
+  "workoutPlans",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    selection: json("selection").$type<WorkoutSelection>().notNull(),
+    title: varchar("title", { length: 160 }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("workoutPlans_user_created_idx").on(table.userId, table.createdAt),
+  ],
+);
+export const workoutPlanExercises = mysqlTable(
+  "workoutPlanExercises",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    planId: int("planId")
+      .notNull()
+      .references(() => workoutPlans.id, { onDelete: "cascade" }),
+    catalogKey: varchar("catalogKey", { length: 80 }).notNull(),
+    order: int("order").notNull(),
+    snapshot: json("snapshot").$type<ExerciseCatalogEntry>().notNull(),
+  },
+  (table) => [
+    index("workoutPlanExercises_plan_order_idx").on(table.planId, table.order),
+    uniqueIndex("workoutPlanExercises_plan_key_unique").on(
+      table.planId,
+      table.catalogKey,
+    ),
+  ],
+);
+export const workoutSessionExercises = mysqlTable(
+  "workoutSessionExercises",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    sessionId: int("sessionId")
+      .notNull()
+      .references(() => workoutSessions.id, { onDelete: "cascade" }),
+    exerciseId: int("exerciseId")
+      .notNull()
+      .references(() => workoutPlanExercises.id, { onDelete: "cascade" }),
+    skipped: int("skipped").notNull().default(0),
+    replacementExerciseId: int("replacementExerciseId"),
+  },
+  (table) => [
+    uniqueIndex("workoutSessionExercises_session_exercise_unique").on(
+      table.sessionId,
+      table.exerciseId,
+    ),
+    index("workoutSessionExercises_session_idx").on(table.sessionId),
+  ],
+);
+export const workoutSetLogs = mysqlTable(
+  "workoutSetLogs",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sessionId: int("sessionId")
+      .notNull()
+      .references(() => workoutSessions.id, { onDelete: "cascade" }),
+    exerciseId: int("exerciseId")
+      .notNull()
+      .references(() => workoutPlanExercises.id, { onDelete: "cascade" }),
+    setNumber: int("setNumber").notNull(),
+    reps: int("reps").notNull(),
+    weightKg: double("weightKg").notNull(),
+    clientId: varchar("clientId", { length: 36 }).notNull(),
+    loggedAt: timestamp("loggedAt").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("workoutSetLogs_user_client_unique").on(
+      table.userId,
+      table.clientId,
+    ),
+    index("workoutSetLogs_user_session_idx").on(table.userId, table.sessionId),
+    index("workoutSetLogs_user_exercise_idx").on(
+      table.userId,
+      table.exerciseId,
+    ),
+  ],
+);
+export type WorkoutPlan = typeof workoutPlans.$inferSelect;
+export type WorkoutPlanExercise = typeof workoutPlanExercises.$inferSelect;
+export type WorkoutSessionExercise =
+  typeof workoutSessionExercises.$inferSelect;
+export type WorkoutSetLog = typeof workoutSetLogs.$inferSelect;

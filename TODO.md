@@ -49,6 +49,15 @@
 - [x] Persist saved plans, plan meals and grocery lines to the managed database with additive migration `0005_empty_shinobi_shaw.sql` and strict per-user ownership; no test health data was seeded.
 - [x] Preserve scanner/manual logging, existing dashboard, authentication, onboarding and Design Preview; validate mobile route compilation, loading/error/empty states, ownership contracts and all plan durations through checks and focused tests.
 
+## Workout generator and tracking
+
+- [x] Allow users to choose muscle gain, fat loss, strength or general fitness; support gym and home workouts; support full body, upper/lower split, push/pull/legs and individual muscle-group workouts.
+- [x] Generate an owner-scoped workout plan whose exercises display name, target muscles, instructions, sets, repetitions, rest time, equipment and an optional demonstration where available.
+- [x] Let users start a generated workout, log sets/repetitions/weights, replace exercises, skip exercises and complete workouts explicitly; keep loading, retry, conflict and failure states honest.
+- [x] Save active and completed workouts, plan snapshots and set logs to the managed database with strict user ownership and idempotent start/completion behavior.
+- [x] Provide workout history and personal records derived from completed logged sets, with estimated-record labeling and no fabricated performance data.
+- [x] Preserve the existing dashboard, nutrition, scanner, authentication, onboarding and Design Preview; validate generator filters, equipment/location constraints, set logging, replacement/skip/completion flow, history/records, mobile layouts and ownership boundaries.
+
 ## Evidence
 
-The current project has healthy Metro and API listeners on ports 8081 and 3000. The full regression suite passes 99 tests across 19 files. TypeScript check, lint, backend build and web/Android/iOS Expo exports pass. The guest Nutrition route was verified in the public browser with explicit Design Preview/sample labels. A browser-only authenticated fixture verified live nutrition totals, a real meal card and all four meal sections; it was reloaded afterward and made no cloud writes. See `docs/NUTRITION_REPORT.md` and `docs/FOOD_SCANNER_REPORT.md`.
+The delivered system has healthy Metro/API listeners, 102 passing regression tests across 20 files, passing TypeScript/lint/build, `drizzle-kit check`, and web/Android/iOS exports. The workout migration is applied and `pnpm db:push` reports no schema changes. The public browser verified that the guest Workouts route remains an explicit Design Preview and does not record sessions. See `docs/WORKOUT_REPORT.md`, `docs/NUTRITION_REPORT.md`, `docs/FOOD_SCANNER_REPORT.md` and the updated `plan.md` for evidence and architecture.

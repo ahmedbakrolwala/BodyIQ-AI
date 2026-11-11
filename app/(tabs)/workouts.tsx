@@ -25,10 +25,41 @@ import { RoadmapModal } from "@/components/bodyiq/roadmap-modal";
 import { palette as p } from "@/constants/design";
 import { sampleWorkouts } from "@/lib/sample-data";
 import { useDesignPreview } from "@/lib/preview-context";
+import { useAuth } from "@/hooks/use-auth";
+import { WorkoutGenerator } from "@/components/bodyiq/workout-generator";
 
 type Workout = (typeof sampleWorkouts)[number];
 
 export default function WorkoutsScreen() {
+  const auth = useAuth();
+  if (auth.loading)
+    return (
+      <Screen preview={false}>
+        <Body>Checking your secure session…</Body>
+      </Screen>
+    );
+  if (auth.error)
+    return (
+      <Screen preview={false}>
+        <Header title="Workouts" eyebrow="BodyIQ Cloud" />
+        <Card>
+          <Body>
+            We couldn’t verify your account, so no workout data is shown.
+          </Body>
+          <View style={{ height: 16 }} />
+          <Button
+            title="Retry secure connection"
+            onPress={() => void auth.refresh()}
+            icon="refresh-cw"
+          />
+        </Card>
+      </Screen>
+    );
+  if (auth.isAuthenticated) return <AuthenticatedWorkouts />;
+  return <PreviewWorkouts />;
+}
+
+function PreviewWorkouts() {
   const { isPreview } = useDesignPreview();
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState<Workout | null>(null);
@@ -209,6 +240,38 @@ export default function WorkoutsScreen() {
         }
         onClose={() => setSelected(null)}
       />
+    </Screen>
+  );
+}
+
+function AuthenticatedWorkouts() {
+  return (
+    <Screen preview={false}>
+      <Header title="Train with intent." eyebrow="WORKOUTS" />
+      <Body style={{ marginBottom: 18 }}>
+        Choose the goal, structure and place that fit today. Review every
+        exercise before you start.
+      </Body>
+      <WorkoutGenerator />
+      <Section title="Your training" />
+      <View style={{ gap: 10 }}>
+        <Button
+          title="Workout history"
+          onPress={() => router.push("/workout-history")}
+          secondary
+          icon="clock"
+        />
+        <Button
+          title="Personal records"
+          onPress={() => router.push("/workout-records")}
+          secondary
+          icon="award"
+        />
+      </View>
+      <Body style={w.footnote}>
+        Only completed, owner-scoped workout data appears here. No sample
+        numbers are used in authenticated screens.
+      </Body>
     </Screen>
   );
 }

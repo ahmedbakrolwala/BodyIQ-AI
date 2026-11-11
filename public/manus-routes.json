@@ -61,6 +61,12 @@
       "path": "/workout-session"
     },
     {
+      "path": "/workout-history"
+    },
+    {
+      "path": "/workout-records"
+    },
+    {
       "path": "/nutrition"
     }
   ]
