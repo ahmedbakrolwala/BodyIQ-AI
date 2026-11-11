@@ -18,7 +18,7 @@ Persist generated plans and completed sessions with owner-scoped records. A work
 - `server/routers/workouts.ts`: protected tRPC procedures for generate, start, log set, replace, skip, complete, history and records.
 - `drizzle/schema.ts` plus additive migration: workout plans, plan exercises, sessions, set logs and indexes.
 - `components/bodyiq/workout-generator.tsx`: authenticated selection controls and generated-plan review.
-- `components/bodyiq/workout-session-real.tsx`: active exercise card, set logger, replace/skip controls and completion state.
+- `app/workout-session.tsx`: active exercise card, set logger, replace/skip controls and completion state.
 - `app/(tabs)/workouts.tsx`: route-level Design Preview/real-data split preserving the current premium preview.
 - `app/workout-history.tsx` and `app/workout-records.tsx`: history and personal-record destinations.
 - `app/workout-session.tsx`: route entry that preserves existing deep links while using the new session flow.
