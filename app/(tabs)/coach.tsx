@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { router } from "expo-router";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import {
   Badge,
   Body,
@@ -14,185 +20,241 @@ import {
 } from "@/components/bodyiq/ui";
 import { palette as p } from "@/constants/design";
 import { useDesignPreview } from "@/lib/preview-context";
+import { useAuth } from "@/hooks/use-auth";
+import { trpc } from "@/lib/trpc";
+
 const prompts = [
-  {
-    question: "Help me build a routine",
-    reply:
-      "Example coach response: Start with a routine you can repeat. The future coach will help connect your schedule, goals, and training preferences. This is scripted preview content, not a personalized plan.",
-  },
-  {
-    question: "Ideas for balanced meals",
-    reply:
-      "Example coach response: Everyday meals can be part of your fitness journey. The future experience will let you explore food preferences and nutrition questions. This is scripted content, not dietary advice.",
-  },
-  {
-    question: "How is my progress?",
-    reply:
-      "Example coach response: In this sample week, your workout cards and activity trends show how a progress recap could look. These are illustrative values, not your actual activity.",
-  },
+  "How should I structure my next workout?",
+  "What can I do to improve recovery?",
+  "Review my recent progress",
 ];
+const demoReply =
+  "This is scripted Design Preview content. Turn off Design Preview and sign in to connect BodyIQ Coach to your saved profile and approved history.";
 export default function CoachScreen() {
   const { isPreview } = useDesignPreview();
-  const [messages, setMessages] = useState<
-    { question: string; reply: string }[]
-  >([]);
+  const { isAuthenticated } = useAuth();
+  return isPreview || !isAuthenticated ? <PreviewCoach /> : <LiveCoach />;
+}
+function Intro({ live }: { live: boolean }) {
+  return (
+    <Card style={c.intro}>
+      <View style={c.top}>
+        <View style={c.aiIcon}>
+          <Icon name="zap" color={p.green} size={28} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={c.coachName}>BodyIQ Coach</Text>
+          <View style={c.status}>
+            <View style={c.dot} />
+            <Text style={c.statusText}>
+              {live ? "GROUNDED IN YOUR PROFILE" : "SCRIPTED DESIGN DEMO"}
+            </Text>
+          </View>
+        </View>
+        <Badge text={live ? "LIVE" : "PREVIEW"} />
+      </View>
+      <Text style={c.headline}>
+        A little guidance.{"\n"}A lot of{" "}
+        <Text style={{ color: p.green }}>possibility.</Text>
+      </Text>
+      <Body style={{ fontSize: 12 }}>
+        Practical support for your goals, routine and real life.
+      </Body>
+    </Card>
+  );
+}
+function PreviewCoach() {
   const [draft, setDraft] = useState("");
-  // Adjust transient demo state before committing a changed preview mode.
-  const [previousPreview, setPreviousPreview] = useState(isPreview);
-  if (previousPreview !== isPreview) {
-    setPreviousPreview(isPreview);
-    if (!isPreview) {
-      setMessages([]);
-      setDraft("");
-    }
-  }
-  function add(question: string, reply?: string) {
-    if (!question.trim() || !isPreview) return;
-    setMessages((old) =>
-      [
-        ...old,
-        {
-          question: question.trim().slice(0, 240),
-          reply:
-            reply ??
-            "Example coach response: Your message is shown locally to preview the conversation layout. A live AI model is not connected, and no message is sent or saved to your account.",
-        },
-      ].slice(-5),
-    );
+  const [messages, setMessages] = useState<{ q: string; r: string }[]>([]);
+  const add = (q: string, r = demoReply) => {
+    if (!q.trim()) return;
+    setMessages((old) => [...old, { q: q.trim(), r }].slice(-5));
     setDraft("");
-  }
+  };
   return (
     <Screen>
       <Header title="Your coach. Your corner." eyebrow="BODYIQ INTELLIGENCE" />
-      <Card style={c.intro}>
-        <View style={c.top}>
-          <View style={c.aiIcon}>
-            <Icon name="zap" color={p.green} size={28} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={c.coachName}>BodyIQ Coach</Text>
-            <View style={c.status}>
-              <View style={c.dot} />
-              <Text style={c.statusText}>
-                {isPreview
-                  ? "SCRIPTED DESIGN DEMO"
-                  : "LIVE COACHING COMING NEXT"}
-              </Text>
-            </View>
-          </View>
-          <Badge text={isPreview ? "PREVIEW" : "SOON"} />
+      <Intro live={false} />
+      <Section title="Start a sample conversation" />
+      <View style={{ gap: 10 }}>
+        {prompts.map((q) => (
+          <Pressable
+            key={q}
+            accessibilityRole="button"
+            onPress={() => add(q)}
+            style={c.prompt}
+          >
+            <Icon name="message-circle" color={p.green} size={17} />
+            <Text style={c.promptText}>{q}</Text>
+            <Icon name="arrow-up-right" size={15} />
+          </Pressable>
+        ))}
+      </View>
+      <View style={c.conversation}>
+        <View style={c.messageTop}>
+          <Icon name="zap" color={p.green} size={17} />
+          <Text style={c.messageLabel}>SAMPLE COACH MESSAGE</Text>
         </View>
-        <Text style={c.headline}>
-          A little guidance.{"\n"}A lot of{" "}
-          <Text style={{ color: p.green }}>possibility.</Text>
-        </Text>
-        <Body style={{ fontSize: 12 }}>
-          Designed to understand your goals, your routine, and your real life.
-        </Body>
-      </Card>
-      {isPreview ? (
-        <>
-          <Section title="Start a sample conversation" />
-          <View style={{ gap: 10 }}>
-            {prompts.map((prompt) => (
-              <Pressable
-                key={prompt.question}
-                accessibilityRole="button"
-                onPress={() => add(prompt.question, prompt.reply)}
-                style={({ pressed }) => [
-                  c.prompt,
-                  { opacity: pressed ? 0.7 : 1 },
-                ]}
-              >
-                <Icon name="message-circle" color={p.green} size={17} />
-                <Text style={c.promptText}>{prompt.question}</Text>
-                <Icon name="arrow-up-right" size={15} />
-              </Pressable>
-            ))}
-          </View>
-          <View style={c.conversation}>
-            <View style={c.messageTop}>
-              <Icon name="zap" color={p.green} size={17} />
-              <Text style={c.messageLabel}>SAMPLE COACH MESSAGE</Text>
+        <View style={c.coachBubble}>
+          <Text style={c.messageText}>
+            Hey there. This sample shows what your future coaching space could
+            feel like.
+          </Text>
+        </View>
+        {messages.map((m, i) => (
+          <View key={`${m.q}-${i}`} style={{ gap: 12, marginTop: 18 }}>
+            <View style={c.userBubble}>
+              <Text style={c.userText}>{m.q}</Text>
             </View>
             <View style={c.coachBubble}>
-              <Text style={c.messageText}>
-                Hey Alex! Ready to make a little progress today? This sample
-                conversation shows what your future coaching space could feel
-                like.
-              </Text>
+              <Text style={c.messageText}>{m.r}</Text>
             </View>
-            {messages.map((message, index) => (
-              <View key={index} style={{ gap: 12, marginTop: 18 }}>
-                <View style={c.userBubble}>
-                  <Text style={c.userText}>{message.question}</Text>
-                </View>
-                <View style={c.coachBubble}>
-                  <Text style={c.messageText}>{message.reply}</Text>
-                </View>
-              </View>
-            ))}
           </View>
-          <View style={c.composer}>
-            <TextInput
-              accessibilityLabel="Sample coach message"
-              placeholder="Try a sample message…"
-              placeholderTextColor={p.muted}
-              value={draft}
-              onChangeText={setDraft}
-              maxLength={240}
-              style={c.input}
-              multiline
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Send sample message"
-              accessibilityState={{ disabled: !draft.trim() }}
-              disabled={!draft.trim()}
-              onPress={() => add(draft)}
-              style={[c.send, { opacity: draft.trim() ? 1 : 0.4 }]}
-            >
-              <Icon name="arrow-up" color={p.background} size={18} />
-            </Pressable>
-          </View>
-          <Text style={c.caption}>DEMO ONLY · NOT LIVE AI · NOT SAVED</Text>
-          {messages.length > 0 && (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setMessages([])}
-              style={c.clear}
-            >
-              <Text style={{ color: p.muted, fontSize: 11 }}>
-                Clear sample conversation
-              </Text>
-            </Pressable>
-          )}
-        </>
-      ) : (
-        <Card style={{ marginTop: 24 }}>
-          <View style={{ alignItems: "center", gap: 15, paddingVertical: 18 }}>
-            <Icon name="lock" color={p.green} size={29} />
-            <Text style={c.coachName}>Live coaching is not connected yet.</Text>
-            <Body style={{ textAlign: "center" }}>
-              No model or chat service is active. Show Design Preview to explore
-              scripted examples.
-            </Body>
-          </View>
-        </Card>
-      )}
-      <View style={{ marginTop: 24 }}>
-        <Button
-          title="Set your real fitness goal"
-          secondary
-          onPress={() => router.push("/profile")}
-          icon="target"
-        />
+        ))}
       </View>
+      <View style={c.composer}>
+        <TextInput
+          accessibilityLabel="Sample coach message"
+          placeholder="Try a sample message…"
+          placeholderTextColor={p.muted}
+          value={draft}
+          onChangeText={setDraft}
+          maxLength={240}
+          style={c.input}
+          multiline
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send sample message"
+          disabled={!draft.trim()}
+          onPress={() => add(draft)}
+          style={[c.send, { opacity: draft.trim() ? 1 : 0.4 }]}
+        >
+          <Icon name="arrow-up" color={p.background} size={18} />
+        </Pressable>
+      </View>
+      <Text style={c.caption}>DEMO ONLY · NOT LIVE AI · NOT SAVED</Text>
       <PreviewNotice>
-        This is a scripted UI preview, not AI-generated coaching. Messages stay
-        in memory, are not saved to the cloud, and are not medical or
+        This is a scripted UI preview. Messages stay in memory and are not
         personalized health advice.
       </PreviewNotice>
+    </Screen>
+  );
+}
+function LiveCoach() {
+  const utils = trpc.useUtils();
+  const query = trpc.coach.history.useQuery({ limit: 50 });
+  const send = trpc.coach.send.useMutation({
+    onSuccess: () => {
+      setDraft("");
+      setFailed("");
+      void utils.coach.history.invalidate();
+    },
+  });
+  const [draft, setDraft] = useState("");
+  const [failed, setFailed] = useState("");
+  const submit = () => {
+    const text = draft.trim();
+    if (!text || send.isPending) return;
+    setFailed("");
+    send.mutate({ message: text });
+  };
+  const messages = query.data ?? [];
+  return (
+    <Screen>
+      <Header title="Your coach. Your corner." eyebrow="BODYIQ INTELLIGENCE" />
+      <Intro live />
+      <Card style={c.safety}>
+        <Icon name="shield" color={p.green} size={16} />
+        <Text style={c.safetyText}>
+          General fitness education only — not diagnosis or medication advice.
+          For injuries or medical concerns, contact a qualified clinician.
+        </Text>
+      </Card>
+      <Section
+        title={messages.length ? "Your conversation" : "Ask your Coach"}
+      />
+      {query.isLoading ? (
+        <ActivityIndicator color={p.green} style={{ margin: 30 }} />
+      ) : query.isError ? (
+        <Card>
+          <Text style={c.messageText}>We couldn’t load your conversation.</Text>
+          <Button title="Retry" secondary onPress={() => query.refetch()} />
+        </Card>
+      ) : messages.length === 0 ? (
+        <View style={{ gap: 10 }}>
+          {prompts.map((q) => (
+            <Pressable
+              key={q}
+              accessibilityRole="button"
+              onPress={() => setDraft(q)}
+              style={c.prompt}
+            >
+              <Icon name="message-circle" color={p.green} size={17} />
+              <Text style={c.promptText}>{q}</Text>
+              <Icon name="arrow-up-right" size={15} />
+            </Pressable>
+          ))}
+        </View>
+      ) : (
+        <View style={c.conversation}>
+          {messages.map((m) => (
+            <View
+              key={m.id}
+              style={m.role === "user" ? c.userBubble : c.coachBubble}
+            >
+              <Text style={m.role === "user" ? c.userText : c.messageText}>
+                {m.content}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {failed ? (
+        <Card style={c.error}>
+          <Text style={c.messageText}>
+            Coach is unavailable right now. Your message is still here.
+          </Text>
+          <Button
+            title="Retry"
+            onPress={() => {
+              setDraft(failed);
+              setFailed("");
+            }}
+            secondary
+          />
+        </Card>
+      ) : null}
+      <View style={c.composer}>
+        <TextInput
+          accessibilityLabel="Message BodyIQ Coach"
+          placeholder="Ask about training, nutrition or recovery…"
+          placeholderTextColor={p.muted}
+          value={draft}
+          onChangeText={setDraft}
+          maxLength={2000}
+          style={c.input}
+          multiline
+          editable={!send.isPending}
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send Coach message"
+          disabled={!draft.trim() || send.isPending}
+          onPress={submit}
+          style={[
+            c.send,
+            { opacity: draft.trim() && !send.isPending ? 1 : 0.4 },
+          ]}
+        >
+          {send.isPending ? (
+            <ActivityIndicator color={p.background} />
+          ) : (
+            <Icon name="arrow-up" color={p.background} size={18} />
+          )}
+        </Pressable>
+      </View>
+      <Text style={c.caption}>YOUR CHAT IS SAVED SECURELY TO YOUR ACCOUNT</Text>
     </Screen>
   );
 }
@@ -234,7 +296,7 @@ const c = StyleSheet.create({
     padding: 15,
   },
   promptText: { color: p.text, fontSize: 12, flex: 1 },
-  conversation: { marginTop: 28 },
+  conversation: { marginTop: 18, gap: 12 },
   messageTop: {
     flexDirection: "row",
     alignItems: "center",
@@ -277,7 +339,7 @@ const c = StyleSheet.create({
   input: {
     flex: 1,
     minHeight: 42,
-    maxHeight: 95,
+    maxHeight: 110,
     color: p.text,
     fontSize: 12,
     paddingHorizontal: 5,
@@ -297,10 +359,13 @@ const c = StyleSheet.create({
     textAlign: "center",
     marginTop: 12,
   },
-  clear: {
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 5,
+  safety: {
+    marginTop: 18,
+    flexDirection: "row",
+    gap: 9,
+    padding: 13,
+    alignItems: "flex-start",
   },
+  safetyText: { color: p.muted, fontSize: 10, lineHeight: 15, flex: 1 },
+  error: { marginTop: 14, borderColor: "#FF887755" },
 });

@@ -138,6 +138,29 @@ export const coachConversations = mysqlTable(
   (table) => [index("coachConversations_userId_idx").on(table.userId)],
 );
 
+export const coachMessages = mysqlTable(
+  "coachMessages",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    conversationId: int("conversationId")
+      .notNull()
+      .references(() => coachConversations.id, { onDelete: "cascade" }),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: mysqlEnum("role", ["user", "assistant"]).notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("coachMessages_user_created_idx").on(table.userId, table.createdAt),
+    index("coachMessages_conversation_created_idx").on(
+      table.conversationId,
+      table.createdAt,
+    ),
+  ],
+);
+
 /** Password credentials are separate so legacy Manus identities remain intact. */
 export const authCredentials = mysqlTable(
   "authCredentials",
@@ -258,6 +281,7 @@ export type NutritionEntry = typeof nutritionEntries.$inferSelect;
 export type WorkoutSession = typeof workoutSessions.$inferSelect;
 export type ProgressEntry = typeof progressEntries.$inferSelect;
 export type CoachConversation = typeof coachConversations.$inferSelect;
+export type CoachMessage = typeof coachMessages.$inferSelect;
 export type AuthCredential = typeof authCredentials.$inferSelect;
 export type AuthSession = typeof authSessions.$inferSelect;
 export type AuthActionToken = typeof authActionTokens.$inferSelect;

@@ -9,6 +9,7 @@ import {
   authRevocations,
   authSessions,
   coachConversations,
+  coachMessages,
   nutritionEntries,
   progressEntries,
   userProfiles,
@@ -115,13 +116,22 @@ export const progressEntriesRelations = relations(
 );
 export const coachConversationsRelations = relations(
   coachConversations,
-  ({ one }) => ({
+  ({ one, many }) => ({
     user: one(users, {
       fields: [coachConversations.userId],
       references: [users.id],
     }),
+    messages: many(coachMessages),
   }),
 );
+
+export const coachMessagesRelations = relations(coachMessages, ({ one }) => ({
+  conversation: one(coachConversations, {
+    fields: [coachMessages.conversationId],
+    references: [coachConversations.id],
+  }),
+  user: one(users, { fields: [coachMessages.userId], references: [users.id] }),
+}));
 
 export const authCredentialsRelations = relations(
   authCredentials,

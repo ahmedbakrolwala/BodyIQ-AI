@@ -30,13 +30,19 @@ Users review a plan, explicitly start a session, log repetitions and weights, re
 
 The app includes branded splash/welcome screens, reusable dark/green UI, five-tab navigation, Home/Nutrition/Workouts/Progress/AI Coach placeholders, functioning navigation and concept previews, secure Manus OAuth, and a basic cloud profile editor. The profile persists a display name, broad fitness goal, country code and preferred units. Guests can explore without saving personal data.
 
-At the initial Phase 1 delivery, advanced meal logging, calorie estimation, workout generation, health measurements, AI chat and coaching were not active. Later upgrades below supersede those initial boundaries; live AI Coach chat remains inactive.
+At the initial Phase 1 delivery, advanced meal logging, calorie estimation, workout generation, health measurements and AI chat were not active. Later upgrades below supersede those initial boundaries.
 
 ## Premium interface upgrade
 
 The existing project now includes polished Welcome, Login, Registration, Home, Nutrition, Food Scanner, Workouts, Progress, AI Coach, Profile, Settings and support screens. The five-tab fitness navigation remains intact. Login/Registration use the preserved OAuth provider; Profile still saves real authenticated basic account data to the cloud.
 
-Design Preview shows explicitly labeled, local-only sample data. The banner eye control and Settings switch hide samples and restore empty states. Coach conversations remain predefined design demos, not live AI. The authenticated scanner is separate from Design Preview and never uses preview values. Preview preferences are device-local and samples are never seeded into the database. Read `docs/INTERFACE_REPORT.md` for historical screen and interaction checks, and `docs/FOOD_SCANNER_REPORT.md` for the scanner handoff.
+Design Preview shows explicitly labeled, local-only sample data. The banner eye control and Settings switch hide samples and restore empty states. Guest Coach conversations remain predefined design demos, while authenticated users get the protected live Coach. The authenticated scanner is separate from Design Preview and never uses preview values. Preview preferences are device-local and samples are never seeded into the database. Read `docs/INTERFACE_REPORT.md` for historical screen and interaction checks, and `docs/FOOD_SCANNER_REPORT.md` for the scanner handoff.
+
+## AI personal fitness coach
+
+Authenticated Coach chat is backed by protected tRPC procedures, server-owned Manus LLM calls and the additive `coachMessages` table in migration 0007. The server grounds replies in the signed-in user’s saved fitness profile, approved recent food logs and completed workouts only; missing values remain unknown. The client never sends a user ID or provider credential. Chat history is owner-scoped, bounded and deleted with the account.
+
+The Coach provides practical general fitness education for training, nutrition, muscle building, fat loss, exercise explanations, recovery, habits and progress reviews. It does not diagnose conditions or prescribe medication and directs users to qualified medical care for injuries or medical concerns. Configure the optional server-only `COACH_MODEL` only with a model available in the managed catalog; otherwise the supported low-cost model is selected server-side. See `docs/COACH_REPORT.md` for architecture, safety controls and verification evidence.
 
 ## Authentication upgrade
 
