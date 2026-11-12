@@ -68,6 +68,10 @@
     },
     {
       "path": "/nutrition"
+    },
+    {
+      "path": "/log-progress",
+      "title": "Log progress"
     }
   ]
 }

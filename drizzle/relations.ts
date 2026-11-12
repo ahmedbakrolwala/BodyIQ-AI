@@ -12,6 +12,7 @@ import {
   coachMessages,
   nutritionEntries,
   progressEntries,
+  progressMeasurements,
   userProfiles,
   users,
   workoutSessions,
@@ -110,6 +111,16 @@ export const progressEntriesRelations = relations(
   ({ one }) => ({
     user: one(users, {
       fields: [progressEntries.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const progressMeasurementsRelations = relations(
+  progressMeasurements,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [progressMeasurements.userId],
       references: [users.id],
     }),
   }),

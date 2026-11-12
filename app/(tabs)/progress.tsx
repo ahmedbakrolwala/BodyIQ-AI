@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { EmptyChart, SampleTrend } from "@/components/bodyiq/charts";
 import {
   Badge,
@@ -19,230 +19,318 @@ import { MiniStat } from "@/components/bodyiq/premium";
 import { palette as p } from "@/constants/design";
 import { sampleTrends } from "@/lib/sample-data";
 import { useDesignPreview } from "@/lib/preview-context";
+import { useAuth } from "@/hooks/use-auth";
+import { trpc } from "@/lib/trpc";
 
-type Metric = keyof typeof sampleTrends;
-type Period = keyof typeof sampleTrends.Weight;
-
+type Metric = "Weight" | "Waist" | "Chest" | "Arm" | "Thigh";
 export default function ProgressScreen() {
   const { isPreview } = useDesignPreview();
-  const [period, setPeriod] = useState<Period>("Week");
-  const [metric, setMetric] = useState<Metric>("Weight");
+  const { isAuthenticated } = useAuth();
+  return isPreview || !isAuthenticated ? <PreviewProgress /> : <RealProgress />;
+}
+function PreviewProgress() {
+  const [period, setPeriod] =
+    useState<keyof typeof sampleTrends.Weight>("Week");
+  const [metric, setMetric] = useState<keyof typeof sampleTrends>("Weight");
   const trend = useMemo(() => sampleTrends[metric][period], [metric, period]);
-  const activitySessions = trend.values.reduce((sum, value) => sum + value, 0);
-  const trendUnit = metric === "Weight" ? "kg" : "sessions";
-  const trendColor = metric === "Weight" ? p.blue : p.green;
-
   return (
     <Screen>
       <Header title="Small steps. Real change." eyebrow="PROGRESS" />
-      <View style={{ marginVertical: 16 }}>
-        <Button
-          title="Record my weight"
-          onPress={() => router.push("/log-weight")}
-        />
-      </View>
-      <Body style={{ marginBottom: 22 }}>
+      <Button
+        title="Record my progress"
+        onPress={() => router.push("/log-progress")}
+      />
+      <Body style={{ marginVertical: 18 }}>
         A clearer picture of your journey — beyond just a number.
       </Body>
-
-      <View style={r.stats}>
-        <View style={{ flex: 1 }}>
-          <MiniStat
-            icon="trending-down"
-            value={isPreview ? "78.4" : "—"}
-            unit="kg"
-            title="Latest weight"
-            color={p.blue}
-          />
-          {!isPreview && <Body style={r.statHint}>No measurements yet</Body>}
-        </View>
-        <View style={{ flex: 1 }}>
-          <MiniStat
-            icon="activity"
-            value={isPreview ? "4" : "—"}
-            unit="sessions"
-            title="This week"
-            color={p.green}
-          />
-          {!isPreview && <Body style={r.statHint}>No sessions yet</Body>}
-        </View>
+      <View style={s.stats}>
+        <MiniStat
+          icon="trending-down"
+          value="78.4"
+          unit="kg"
+          title="Latest weight"
+          color={p.blue}
+        />
+        <MiniStat
+          icon="activity"
+          value="4"
+          unit="sessions"
+          title="This week"
+          color={p.green}
+        />
       </View>
-
       <Section title="Your trend" />
       <Segmented
         options={["Weight", "Activity"]}
         value={metric}
-        onChange={(value) => setMetric(value as Metric)}
+        onChange={(v) => setMetric(v as any)}
       />
       <Card>
-        <View style={r.chartHeader}>
-          <View>
-            <Label>{metric.toUpperCase()} OVER TIME</Label>
-            {isPreview && (
-              <Text style={r.chartValue}>
-                {metric === "Weight" ? "78.4" : activitySessions}{" "}
-                <Text style={r.chartUnit}>{trendUnit}</Text>
-              </Text>
-            )}
-          </View>
-          {isPreview ? (
-            <Badge text="SAMPLE DATA" color={trendColor} />
-          ) : (
-            <Badge text="NO DATA YET" color={p.muted} />
-          )}
-        </View>
-        <View style={{ marginTop: 17 }}>
-          <Segmented
-            options={["Week", "Month", "Year"]}
-            value={period}
-            onChange={(value) => setPeriod(value as Period)}
+        <View style={s.chartHeader}>
+          <Label>{metric.toUpperCase()} OVER TIME</Label>
+          <Badge
+            text="SAMPLE DATA"
+            color={metric === "Weight" ? p.blue : p.green}
           />
         </View>
-        {isPreview ? (
-          <SampleTrend
-            values={trend.values}
-            labels={trend.labels}
-            min={trend.min}
-            max={trend.max}
-            color={trendColor}
-            unit={trendUnit}
-          />
-        ) : (
-          <EmptyChart metric={metric} units={trendUnit} period={period} />
-        )}
+        <Segmented
+          options={["Week", "Month", "Year"]}
+          value={period}
+          onChange={(v) => setPeriod(v as any)}
+        />
+        <SampleTrend
+          values={trend.values}
+          labels={trend.labels}
+          min={trend.min}
+          max={trend.max}
+          color={metric === "Weight" ? p.blue : p.green}
+          unit={metric === "Weight" ? "kg" : "sessions"}
+        />
       </Card>
-
-      <Section title="Beyond the numbers" />
-      {isPreview ? (
-        <Card style={r.insight}>
-          <View style={r.insightIcon}>
-            <Icon name="trending-up" color={p.green} size={22} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <View style={r.insightHeader}>
-              <Text style={r.insightTitle}>A steady week</Text>
-              <Badge text="SAMPLE" color={p.green} />
-            </View>
-            <Body style={{ fontSize: 11, marginTop: 7 }}>
-              The sample trend shows a gentle 0.5 kg shift across the week — a
-              visual example, not a real measurement or prediction.
-            </Body>
-          </View>
-        </Card>
-      ) : (
-        <Card>
-          <EmptyState
-            icon="trending-up"
-            title="Your story starts with a record."
-            description="Future insights will connect your measurements and sessions once tracking is available."
-          />
-        </Card>
-      )}
-
-      <Section title="Your milestones" />
-      {isPreview ? (
-        <View style={{ gap: 10 }}>
-          <Card style={r.milestone}>
-            <View style={[r.milestoneIcon, { backgroundColor: "#C3FF5C14" }]}>
-              <Icon name="award" color={p.green} size={20} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={r.milestoneTitle}>Four sessions in a week</Text>
-              <Text style={r.milestoneSub}>Sample consistency milestone</Text>
-            </View>
-            <Badge text="SAMPLE" color={p.green} />
-          </Card>
-          <Card style={r.milestone}>
-            <View style={[r.milestoneIcon, { backgroundColor: "#82B9DD14" }]}>
-              <Icon name="bar-chart-2" color={p.blue} size={20} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={r.milestoneTitle}>Compared with last period</Text>
-              <Text style={r.milestoneSub}>
-                −0.5 kg · illustrative comparison
-              </Text>
-            </View>
-            <Icon name="arrow-down-right" color={p.blue} size={18} />
-          </Card>
-        </View>
-      ) : (
-        <Card>
-          <EmptyState
-            icon="award"
-            title="The story is yours to write."
-            description="Your achievements will appear here as tracking becomes available. There are no recorded measurements yet."
-          />
-        </Card>
-      )}
-
-      <Body style={r.footnote}>
-        {isPreview
-          ? "All chart values, milestones, and comparisons are illustrative sample data for the interface preview only."
-          : "Your data will appear here once progress tracking is available."}
-      </Body>
+      <PreviewNoticeText />
     </Screen>
   );
 }
-
-const r = StyleSheet.create({
+function PreviewNoticeText() {
+  return (
+    <Body style={s.footnote}>
+      All chart values and milestones are illustrative sample data only. They
+      are not predictions.
+    </Body>
+  );
+}
+function RealProgress() {
+  const [metric, setMetric] = useState<Metric>("Weight");
+  const [period, setPeriod] = useState<"week" | "month" | "all">("month");
+  const q = trpc.progress.summary.useQuery({ period, limit: 100 });
+  const del = trpc.progress.delete.useMutation({
+    onSuccess: () => void q.refetch(),
+  });
+  const data = q.data;
+  const series =
+    data?.charts[metric.toLowerCase() as keyof typeof data.charts] ?? [];
+  return (
+    <Screen>
+      <Header title="Your progress, recorded." eyebrow="PRIVATE PROGRESS" />
+      <Button
+        title="Record measurements"
+        onPress={() => router.push("/log-progress")}
+      />
+      <Body style={{ marginVertical: 18 }}>
+        Use your records to understand trends. BodyIQ does not promise a
+        specific future transformation.
+      </Body>
+      {q.isLoading ? (
+        <Card>
+          <Body>Loading your private progress…</Body>
+        </Card>
+      ) : q.isError ? (
+        <Card>
+          <Body>We couldn’t load progress.</Body>
+          <Button title="Retry" secondary onPress={() => q.refetch()} />
+        </Card>
+      ) : (
+        <>
+          <View style={s.stats}>
+            <MiniStat
+              icon="trending-down"
+              value={data?.records.at(-1)?.weightKg?.toFixed(1) ?? "—"}
+              unit="kg"
+              title="Latest weight"
+              color={p.blue}
+            />
+            <MiniStat
+              icon="activity"
+              value={String(data?.weekly.workouts ?? 0)}
+              unit="sessions"
+              title="This week"
+              color={p.green}
+            />
+          </View>
+          <Section title="Charts" />
+          <Segmented
+            options={["Weight", "Waist", "Chest", "Arm", "Thigh"]}
+            value={metric}
+            onChange={(v) => setMetric(v as Metric)}
+          />
+          <Card>
+            <View style={s.chartHeader}>
+              <Label>{metric.toUpperCase()} RECORDS</Label>
+              <Badge
+                text={series.length ? "RECORDED" : "NO DATA"}
+                color={series.length ? p.green : p.muted}
+              />
+            </View>
+            {series.length ? (
+              <SimpleChart
+                values={series.map((x) => x.value)}
+                color={metric === "Weight" ? p.blue : p.green}
+              />
+            ) : (
+              <EmptyChart
+                metric={metric}
+                units={metric === "Weight" ? "kg" : "cm"}
+                period={period}
+              />
+            )}
+            <Segmented
+              options={["Week", "Month", "All"]}
+              value={
+                period === "week"
+                  ? "Week"
+                  : period === "month"
+                    ? "Month"
+                    : "All"
+              }
+              onChange={(v) =>
+                setPeriod(
+                  v === "Week" ? "week" : v === "Month" ? "month" : "all",
+                )
+              }
+            />
+          </Card>
+          <Section title="Consistency & strength" />
+          <View style={s.stats}>
+            <MiniStat
+              icon="activity"
+              value={String(data?.monthly.workouts ?? 0)}
+              unit="sessions"
+              title="This month"
+              color={p.green}
+            />
+            <MiniStat
+              icon="bar-chart-2"
+              value={
+                data?.strength.bestWeightKg
+                  ? `${data.strength.bestWeightKg.toFixed(1)}`
+                  : "—"
+              }
+              unit="kg"
+              title="Best logged set"
+              color={p.blue}
+            />
+          </View>
+          <Section title="Milestones" />
+          {data?.milestones.length ? (
+            <View style={{ gap: 10 }}>
+              {data.milestones.map((m) => (
+                <Card key={m} style={s.milestone}>
+                  <Icon name="award" color={p.green} size={19} />
+                  <Text style={s.milestoneText}>{m}</Text>
+                </Card>
+              ))}
+            </View>
+          ) : (
+            <Card>
+              <EmptyState
+                icon="award"
+                title="Your story starts with a record."
+                description="Milestones appear only from your recorded measurements and completed workouts."
+              />
+            </Card>
+          )}
+          <Section title="Records" />
+          {data?.records.length ? (
+            <View style={{ gap: 10 }}>
+              {data.records
+                .slice()
+                .reverse()
+                .map((r) => (
+                  <Card key={r.id} style={s.record}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.recordDate}>
+                        {new Date(r.recordedAt).toLocaleDateString()}
+                      </Text>
+                      <Text style={s.recordValues}>
+                        {r.weightKg ? `${r.weightKg.toFixed(1)} kg` : ""}
+                        {r.waistCm
+                          ? `  ·  Waist ${r.waistCm.toFixed(1)} cm`
+                          : ""}
+                      </Text>
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/log-progress",
+                          params: { id: String(r.id) },
+                        })
+                      }
+                    >
+                      <Text style={s.action}>Edit</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => del.mutate({ id: r.id })}
+                    >
+                      <Text style={s.delete}>Delete</Text>
+                    </Pressable>
+                  </Card>
+                ))}
+            </View>
+          ) : (
+            <Card>
+              <EmptyState
+                icon="trending-up"
+                title="No progress records yet"
+                description="Record a measurement or optional photo to begin."
+              />
+            </Card>
+          )}
+        </>
+      )}
+    </Screen>
+  );
+}
+function SimpleChart({ values, color }: { values: number[]; color: string }) {
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  return (
+    <View style={s.simpleChart}>
+      {values.map((v, i) => (
+        <View key={`${v}-${i}`} style={s.barWrap}>
+          <View
+            style={[
+              s.bar,
+              {
+                height: Math.max(8, ((v - min) / (max - min || 1)) * 90 + 8),
+                backgroundColor: color,
+              },
+            ]}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
+const s = StyleSheet.create({
   stats: { flexDirection: "row", gap: 11 },
-  statCard: { flex: 1, padding: 15 },
-  statHint: { fontSize: 10, marginTop: 9 },
   chartHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 9,
-  },
-  chartValue: {
-    color: p.text,
-    fontSize: 28,
-    fontWeight: "600",
-    marginTop: 10,
-    letterSpacing: -0.6,
-  },
-  chartUnit: { color: p.muted, fontSize: 11, fontWeight: "400" },
-  insight: {
-    flexDirection: "row",
-    gap: 14,
-    padding: 18,
-    backgroundColor: "#182014",
-    borderColor: "#C3FF5C20",
-  },
-  insightIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#C3FF5C10",
-  },
-  insightHeader: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 8,
+    marginBottom: 16,
   },
-  insightTitle: { color: p.text, fontSize: 13, fontWeight: "600", flex: 1 },
+  footnote: { fontSize: 11, lineHeight: 17, marginTop: 18 },
   milestone: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     padding: 15,
   },
-  milestoneIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
+  milestoneText: { color: p.text, fontSize: 12, flex: 1 },
+  record: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14 },
+  recordDate: { color: p.muted, fontSize: 10 },
+  recordValues: { color: p.text, fontSize: 12, marginTop: 5 },
+  action: { color: p.green, fontSize: 11 },
+  delete: { color: "#FF8D8D", fontSize: 11 },
+  simpleChart: {
+    height: 120,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 7,
+    paddingVertical: 12,
   },
-  milestoneTitle: { color: p.text, fontSize: 13, fontWeight: "600" },
-  milestoneSub: { color: p.muted, fontSize: 10, marginTop: 5 },
-  footnote: {
-    fontSize: 11,
-    lineHeight: 17,
-    marginTop: 18,
-    paddingHorizontal: 2,
-  },
+  barWrap: { flex: 1, height: 100, justifyContent: "flex-end" },
+  bar: { borderRadius: 4, minHeight: 8 },
 });

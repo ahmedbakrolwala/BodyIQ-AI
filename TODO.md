@@ -1,7 +1,7 @@
-## AI personal fitness coach
+## Progress tracking system
 
-- [x] Replace the authenticated Coach placeholder with a protected AI chat assistant for workout questions, nutrition guidance, muscle-building advice, fat-loss guidance, exercise explanations, recovery/rest guidance, fitness habits and progress reviews.
-- [x] Ground each response only in the signed-in user’s saved fitness profile plus approved workout and nutrition history; never invent user data or silently use another user’s records.
-- [x] Use a secure backend-only Manus LLM call with a server-owned model selection, bounded input/history, practical explanations, general fitness guidance and explicit safety boundaries: no diagnosis, medication prescription or unsafe injury claims; recommend qualified medical care for injuries or medical concerns.
-- [x] Save user/assistant chat turns securely with strict owner-scoped history queries and account deletion cascade; do not store API credentials or health data in the frontend.
-- [x] Provide mobile loading, sending, retry, empty, offline/service-failure and privacy states without breaking Design Preview, navigation or prior features. Evidence: `pnpm check`, `pnpm lint`, 102 regression tests, `pnpm build`, `drizzle-kit check`, database migration 0007, and web/Android/iOS Expo export passed.
+- [x] Add authenticated owner-scoped records for body weight, waist, chest, arm and thigh measurements, with optional private progress photos.
+- [x] Provide weekly/monthly summaries, weight and measurement charts, workout consistency, strength improvements, goal completion and personal milestones using recorded data only; never promise a specific transformation.
+- [x] Allow users to create, edit and delete their own progress records; prevent access to another user’s records.
+- [x] Store progress photos through private managed storage, expose only short-lived signed URLs to the owner, and remove photo references on record deletion.
+- [x] Preserve Design Preview, current navigation and existing weight logging; validate with type checks, lint, tests, migration checks, builds and cross-platform export.

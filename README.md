@@ -44,6 +44,12 @@ Authenticated Coach chat is backed by protected tRPC procedures, server-owned Ma
 
 The Coach provides practical general fitness education for training, nutrition, muscle building, fat loss, exercise explanations, recovery, habits and progress reviews. It does not diagnose conditions or prescribe medication and directs users to qualified medical care for injuries or medical concerns. Configure the optional server-only `COACH_MODEL` only with a model available in the managed catalog; otherwise the supported low-cost model is selected server-side. See `docs/COACH_REPORT.md` for architecture, safety controls and verification evidence.
 
+## Progress tracking
+
+Authenticated Progress stores private owner-scoped records for weight, waist, chest, arm and thigh measurements, optional notes and optional progress photos. Users can add, edit and delete their own records. Migration 0008 adds the measurement table; the existing weight logger remains supported.
+
+The Progress tab shows recorded weekly/monthly workout consistency, logged-set strength bests, measurement charts, goal completion when a target weight exists, and deterministic milestones. It never fabricates empty-state metrics or promises a specific body transformation. Photos use managed private storage and short-lived signed URLs after ownership checks. See `docs/PROGRESS_REPORT.md` for the implementation and privacy boundaries.
+
 ## Authentication upgrade
 
 Backend-connected email/password registration, verification/resend, login/logout, forgot/reset, account security and deletion are implemented. Passwords use salted scrypt; persistent JWT/SID sessions are revocable. Google OpenID Connect uses PKCE, nonce validation, encrypted/browser-bound state and verifier-bound native completion. The existing design, fitness navigation, Manus access and real cloud profile editor are preserved.

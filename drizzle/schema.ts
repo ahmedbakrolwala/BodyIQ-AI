@@ -280,6 +280,31 @@ export const authRevocations = mysqlTable("authRevocations", {
 export type NutritionEntry = typeof nutritionEntries.$inferSelect;
 export type WorkoutSession = typeof workoutSessions.$inferSelect;
 export type ProgressEntry = typeof progressEntries.$inferSelect;
+export const progressMeasurements = mysqlTable(
+  "progressMeasurements",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    recordedAt: timestamp("recordedAt").defaultNow().notNull(),
+    weightKg: double("weightKg"),
+    waistCm: double("waistCm"),
+    chestCm: double("chestCm"),
+    armCm: double("armCm"),
+    thighCm: double("thighCm"),
+    note: varchar("note", { length: 240 }).notNull().default(""),
+    photoKey: varchar("photoKey", { length: 512 }),
+  },
+  (table) => [
+    index("progressMeasurements_user_recorded_idx").on(
+      table.userId,
+      table.recordedAt,
+    ),
+  ],
+);
+
+export type ProgressMeasurement = typeof progressMeasurements.$inferSelect;
 export type CoachConversation = typeof coachConversations.$inferSelect;
 export type CoachMessage = typeof coachMessages.$inferSelect;
 export type AuthCredential = typeof authCredentials.$inferSelect;
